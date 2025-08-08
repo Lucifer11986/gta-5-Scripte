@@ -167,3 +167,65 @@ Config.WarmClothing = {
         -- Hier könnten IDs für dicke Hosen stehen, falls gewünscht
     }
 }
+
+-- 🎃 Herbst-Event (Kürbissuche)
+Config.AutumnEvent = {
+    Enabled = true,
+    DurationDays = 7, -- Wie viele Tage das Event nach dem ersten Start im Herbst laufen soll
+    PumpkinLocations = {
+        -- Hier Koordinaten für Kürbisse eintragen
+        vector3(214.9390, -807.937, 31.014),
+        vector3(218.6911, -934.990, 28.652),
+        vector3(285.1620, -985.747, 47.897),
+    },
+    Rewards = {
+        common = { -- Hohe Chance
+            { type = "item", name = "pumpkin_pie", amount = 1 },
+            { type = "money", amount = {min = 100, max = 250} }
+        },
+        rare = { -- Mittlere Chance
+            { type = "item", name = "scary_mask", amount = 1 },
+            { type = "money", amount = {min = 500, max = 1000} }
+        },
+        very_rare = { -- Geringe Chance
+            { type = "item", name = "rare_halloween_vehicle_key", amount = 1 },
+            { type = "money", amount = {min = 5000, max = 10000} }
+        }
+    },
+    RewardProbabilities = { -- Die Summe muss 100 ergeben
+        common = 70, -- 70%
+        rare = 25,   -- 25%
+        very_rare = 5 -- 5%
+    }
+}
+
+-- 🎁 Winter-Event (Geschenkesuche)
+Config.WinterEvent = {
+    Enabled = true,
+    DurationDays = 7, -- Wie viele Tage das Event nach dem ersten Start im Winter laufen soll
+    PresentLocations = {
+        -- Hier Koordinaten für Geschenke eintragen
+        vector3(-80.0684, -823.759, 320.364),
+        vector3(-235.5951, -2003.07, 23.756),
+        vector3(29.9850, -1353.4147, 29.3274),
+    },
+    Rewards = {
+        common = {
+            { type = "item", name = "hot_chocolate", amount = 1 },
+            { type = "money", amount = {min = 100, max = 250} }
+        },
+        rare = {
+            { type = "item", name = "christmas_sweater", amount = 1 },
+            { type = "money", amount = {min = 500, max = 1000} }
+        },
+        very_rare = {
+            { type = "item", name = "rare_winter_vehicle_key", amount = 1 },
+            { type = "money", amount = {min = 5000, max = 10000} }
+        }
+    },
+    RewardProbabilities = { -- Die Summe muss 100 ergeben
+        common = 70,
+        rare = 25,
+        very_rare = 5
+    }
+}
