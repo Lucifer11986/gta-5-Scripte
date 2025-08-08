@@ -1,20 +1,51 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schließfach</title>
+    <title>Mailbox Locker</title>
     <link rel="stylesheet" href="ui.css">
+    <style>
+        .locker-container {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #fff;
+            padding: 20px;
+            color: white;
+        }
+        .locker-inventory {
+            list-style: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .locker-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        .take-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="ui-container" id="lockerUI" style="display: none;">
-        <h1>📦 Schließfach</h1>
-
-        <!-- Liste der Gegenstände im Schließfach -->
-        <ul id="lockerItems"></ul>
-
-        <!-- Schließen-Button -->
-        <button id="closeLockerUI">❌ Schließen</button>
+    <div id="locker" class="locker-container">
+        <h2>Dein Briefkasten</h2>
+        <ul id="locker-inventory" class="locker-inventory">
+            <!-- Items will be populated by JS -->
+        </ul>
+        <button id="closeLocker">Schließen</button>
     </div>
     <script src="locker.js"></script>
 </body>

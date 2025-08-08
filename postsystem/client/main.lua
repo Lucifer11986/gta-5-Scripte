@@ -9,17 +9,28 @@ local eventsRegistered = false -- Flag, um zu überprüfen, ob Events bereits re
 -- NPC-Modell
 local npcModel = "s_m_m_postal_01"
 
+-- Hilfsfunktion zur Überprüfung, ob ein Spieler ein Item besitzt
+function HasPlayerItem(itemName)
+    local hasItem = false
+    local playerData = ESX.GetPlayerData()
+    if playerData and playerData.inventory then
+        for i = 1, #playerData.inventory, 1 do
+            if playerData.inventory[i].name == itemName and playerData.inventory[i].count > 0 then
+                hasItem = true
+                break
+            end
+        end
+    end
+    return hasItem
+end
+
 -- Funktion zum Spawnen der NPCs
 local function spawnNPCs()
     for _, station in ipairs(Config.PostStations) do
         RequestModel(npcModel)
-        while not HasModelLoaded(npcModel) do
-            Citizen.Wait(10)
-        end
-
-        -- Spawne den NPC mit der korrekten Rotation (Heading)
+        while not HasModelLoaded(npcModel) do Citizen.Wait(10) end
         local npc = CreatePed(4, npcModel, station.x, station.y, station.z, station.heading, false, true)
-        SetEntityHeading(npc, station.heading) -- Setze die Rotation des NPCs
+        SetEntityHeading(npc, station.heading)
         FreezeEntityPosition(npc, true)
         SetEntityInvincible(npc, true)
         SetBlockingOfNonTemporaryEvents(npc, true)
@@ -30,9 +41,7 @@ end
 local function isNearPostStation()
     local playerCoords = GetEntityCoords(PlayerPedId())
     for _, station in ipairs(Config.PostStations) do
-        local stationCoords = vector3(station.x, station.y, station.z)
-        local distance = #(playerCoords - stationCoords)
-        if distance < 1.5 then
+        if #(playerCoords - vector3(station.x, station.y, station.z)) < 2.0 then
             return true
         end
     end
@@ -72,179 +81,84 @@ end
 
 -- Funktion zur Registrierung von Events
 local function registerEvents()
-    if eventsRegistered then return end -- Beende die Funktion, wenn Events bereits registriert sind
+    if eventsRegistered then return end
+    eventsRegistered = true
 
-    -- Benachrichtigung über neue Mail
     RegisterNetEvent("postsystem:notifyMail")
     AddEventHandler("postsystem:notifyMail", function(mailEntry)
         if mailEntry and mailEntry.sender then
-            if mailEntry.express then
-                ESX.ShowNotification(("📩 ~y~Express-Brief von ~w~%s erhalten!"):format(mailEntry.sender))
-            else
-                ESX.ShowNotification(("📩 Neuer Brief von %s erhalten!"):format(mailEntry.sender))
-            end
-        else
-            print("❌ Fehler: Ungültige Mail-Benachrichtigung erhalten!", json.encode(mailEntry))
+            ESX.ShowNotification(("📩 Neuer Brief von %s erhalten!"):format(mailEntry.sender))
         end
     end)
 
-    -- Postsystem öffnen
     RegisterCommand("openMail", function()
-        if isUIOpen then return end
-
-        -- Überprüfe, ob der Spieler in der Nähe einer Poststation ist
-        if not isNearPostStation() then
-            ESX.ShowNotification("❌ Du bist nicht in der Nähe einer Poststation!")
-            return
-        end
-
+        if isUIOpen or not isNearPostStation() then return end
+        local playerData = ESX.GetPlayerData()
+        local isPolice = playerData.job and playerData.job.name == 'police'
+        local isPostman = playerData.job and playerData.job.name == Config.PostmanJob.JobName
+        local playerHasBox = HasPlayerItem('cardboard_box')
         ESX.TriggerServerCallback("postsystem:getMail", function(receivedMessages)
-            if not receivedMessages then receivedMessages = {} end
-
             ESX.TriggerServerCallback("postsystem:getStations", function(stations)
-                if not stations then stations = {} end
-
                 ESX.TriggerServerCallback("postsystem:getPlayers", function(players)
-                    if not players then players = {} end
-
                     ESX.TriggerServerCallback("postsystem:getFactions", function(factions)
-                        if not factions then factions = {} end
-
-                        SetNuiFocus(true, true)
-                        SendNUIMessage({
-                            action = "openUI",
-                            stations = stations,
-                            players = players,
-                            factions = factions,
-                            receivedMessages = receivedMessages
-                        })
-                        isUIOpen = true
-                        print("📬 Postsystem geöffnet")
+                        ESX.TriggerServerCallback("postsystem:getInventory", function(inventory)
+                            local dataToSend = {
+                                action = "openUI", isPolice = isPolice, isPostman = isPostman,
+                                stations = stations or {}, players = players or {}, factions = factions or {},
+                                receivedMessages = receivedMessages or {}, inventory = inventory or {}, hasBox = playerHasBox
+                            }
+                            if isPolice then
+                                ESX.TriggerServerCallback('postsystem:getPackagesForInspection', function(inspectionList)
+                                    dataToSend.inspectionList = inspectionList or {}
+                                    SendNUIMessage(dataToSend)
+                                    SetNuiFocus(true, true)
+                                    isUIOpen = true
+                                end)
+                            else
+                                SendNUIMessage(dataToSend)
+                                SetNuiFocus(true, true)
+                                isUIOpen = true
+                            end
+                        end)
                     end)
                 end)
             end)
         end)
     end, false)
 
-    -- UI schließen
-    RegisterNUICallback("closeUI", function(data, cb)
-        SetNuiFocus(false, false)
-        isUIOpen = false
-        cb("ok")
-        print("📬 Postsystem geschlossen")
-    end)
-
-    -- Mail senden
-    RegisterNUICallback("sendMail", function(data, cb)
-        if data and data.station and data.receiver and data.message then
-            -- Konvertiere receiver in eine Zahl
-            data.receiver = tonumber(data.receiver)
-            
-            -- Debug-Ausgabe
-            print("📨 Sende Mail an Server...", json.encode(data))
-            
-            -- Überprüfe, ob Express-Versand aktiviert ist
-            local isExpress = data.express or false
-            local deliveryTime = isExpress and Config.ExpressDeliveryTime or Config.StandardDeliveryTime
-            
-            -- Zeige eine Benachrichtigung an
-            ESX.ShowNotification(("📩 Deine Nachricht wurde versendet! Lieferzeit: %d Sekunden"):format(deliveryTime))
-            
-            -- Sende Daten an den Server
-            TriggerServerEvent("postsystem:sendMail", data)
-            cb("ok")
-        else
-            print("❌ Fehler: Ungültige Mail-Daten beim Senden!", json.encode(data))
-            ESX.ShowNotification("❌ Fehler: Ungültige Mail-Daten!")
-            cb("error")
-        end
-    end)
-
-    -- Gruppen-Nachricht senden
-    RegisterNUICallback("sendGroupMail", function(data, cb)
-        if data and data.station and data.faction and data.message then
-            -- Debug-Ausgabe
-            print("📨 Sende Gruppen-Nachricht an Server...", json.encode(data))
-            
-            -- Überprüfe, ob Express-Versand aktiviert ist
-            local isExpress = data.express or false
-            local deliveryTime = isExpress and Config.ExpressDeliveryTime or Config.StandardDeliveryTime
-            
-            -- Zeige eine Benachrichtigung an
-            ESX.ShowNotification(("📩 Deine Gruppen-Nachricht wurde versendet! Lieferzeit: %d Sekunden"):format(deliveryTime))
-            
-            -- Sende Daten an den Server
-            TriggerServerEvent("postsystem:sendGroupMail", data)
-            cb("ok")
-        else
-            print("❌ Fehler: Ungültige Gruppen-Nachrichtendaten beim Senden!", json.encode(data))
-            ESX.ShowNotification("❌ Fehler: Ungültige Gruppen-Nachrichtendaten!")
-            cb("error")
-        end
-    end)
-
-    -- Mail löschen
-    RegisterNUICallback("deleteMail", function(data, cb)
-        if data and data.id then
-            print("🗑️ Lösche Mail mit ID:", data.id)
-            TriggerServerEvent("postsystem:deleteMail", data.id)
-            cb("ok")
-        else
-            print("❌ Fehler: Ungültige Mail-ID beim Löschen!", json.encode(data))
-            ESX.ShowNotification("❌ Fehler: Ungültige Mail-ID!")
-            cb("error")
-        end
-    end)
-
-    -- Antwort auf eine Nachricht
-    RegisterNUICallback("replyMail", function(data, cb)
-        if data and data.sender then
-            -- Öffne das Postsystem mit vorausgefülltem Empfänger und Nachricht
-            SendNUIMessage({
-                action = "openUI",
-                replyTo = data.sender, -- Empfänger vorausfüllen
-                replyMessage = "RE: " .. data.message -- Nachricht vorausfüllen
-            })
-            cb("ok")
-        else
-            cb("error")
-        end
-    end)
-
-    -- Tastenzuordnung
+    RegisterNUICallback("closeUI", function(data, cb) SetNuiFocus(false, false); isUIOpen = false; cb("ok") end)
+    RegisterNUICallback("sendMail", function(data, cb) TriggerServerEvent("postsystem:sendMail", data); cb("ok") end)
+    RegisterNUICallback("sendPackage", function(data, cb) TriggerServerEvent("postsystem:sendPackage", data); cb("ok") end)
+    RegisterNUICallback("confiscatePackage", function(data, cb) if data and data.id then TriggerServerEvent('postsystem:confiscatePackage', data.id) end; cb('ok') end)
+    RegisterNUICallback("deleteMail", function(data, cb) TriggerServerEvent("postsystem:deleteMail", data.id); cb("ok") end)
     RegisterKeyMapping("openMail", "Postsystem öffnen", "keyboard", "E")
-
-    eventsRegistered = true -- Setze das Flag auf true, um zu signalisieren, dass Events registriert sind
 end
 
--- Erstelle Blips und NPCs beim Start
+-- Initialisierung
 CreateThread(function()
     createPostStationBlips()
     spawnNPCs()
+    registerEvents()
 end)
 
--- Registriere Events beim Start
-registerEvents()
-
--- Überprüfe kontinuierlich, ob der Spieler in der Nähe einer Poststation ist und zeige die Meldung an
+-- Interaktions-Schleife
 CreateThread(function()
     while true do
         Citizen.Wait(0)
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        local isNear = false
-
-        for _, station in ipairs(Config.PostStations) do
-            local stationCoords = vector3(station.x, station.y, station.z)
-            local distance = #(playerCoords - stationCoords)
-            if distance < 1.5 then
-                isNear = true
-                drawText3D(stationCoords, "~g~Drücke ~w~[~b~E~w~], um die Poststation zu öffnen")
-                break
+        if not isUIOpen then
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local nearStation = false
+            for _, station in ipairs(Config.PostStations) do
+                local stationCoords = vector3(station.x, station.y, station.z)
+                if #(playerCoords - stationCoords) < 2.0 then
+                    nearStation = true
+                    drawText3D(stationCoords, "~g~Drücke [E]~w~, um die Poststation zu öffnen")
+                    if IsControlJustReleased(0, 38) then -- E
+                        ExecuteCommand("openMail")
+                    end
+                    break
+                end
             end
-        end
-
-        if isNear and IsControlJustReleased(0, 38) then -- 38 ist der Keycode für die E-Taste
-            ExecuteCommand("openMail")
         end
     end
 end)

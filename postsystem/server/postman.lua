@@ -1,197 +1,135 @@
--- server/postman.lua
+ESX = exports["es_extended"]:getSharedObject()
 
--- Tabelle zum Speichern der Kleidung der Spieler
-local playerClothing = {}
+-- Callback: Ausstehende Pakete abrufen
+ESX.RegisterServerCallback('postsystem:getPendingPackages', function(source, cb)
+    -- Hole alle Pakete mit Status 'pending', sortiert nach Express
+    MySQL.Async.fetchAll(
+        'SELECT * FROM post_packages WHERE status = "pending" ORDER BY express DESC, creation_timestamp ASC',
+        {},
+        function(packages)
+            cb(packages or {})
+        end
+    )
+end)
 
--- Funktion zum Annehmen des Postboten-Jobs
-RegisterServerEvent("postsystem:acceptPostmanJob")
-AddEventHandler("postsystem:acceptPostmanJob", function()
+-- Event: Lieferroute starten
+RegisterNetEvent('postsystem:startDeliveryRoute')
+AddEventHandler('postsystem:startDeliveryRoute', function()
     local src = source
     local player = ESX.GetPlayerFromId(src)
     if not player then return end
 
-    -- Speichere die aktuelle Kleidung des Spielers
-    TriggerClientEvent("postsystem:saveCurrentClothing", src)
+    -- Hole bis zu 5 ausstehende Pakete und verknüpfe sie mit dem Briefkasten des Empfängers
+    local query = [[
+        SELECT p.*, m.id as mailbox_id, m.location as mailbox_location
+        FROM post_packages p
+        JOIN player_mailboxes m ON p.receiver_identifier = m.owner_identifier
+        WHERE p.status = "pending"
+        ORDER BY p.express DESC, p.creation_timestamp ASC
+        LIMIT 5
+    ]]
 
-    -- Setze den Job des Spielers auf Postbote
-    player.setJob(Config.PostmanJob.JobName, 0) -- 0 ist der Rang (z. B. Anfänger)
-
-    -- Uniform anziehen
-    TriggerClientEvent("postsystem:setPostmanUniform", src)
-
-    -- Benachrichtigung
-    TriggerClientEvent("esx:showNotification", src, "✅ Du bist jetzt ein Postbote!")
-end)
-
--- Event zum Speichern der aktuellen Kleidung
-RegisterNetEvent("postsystem:saveCurrentClothing")
-AddEventHandler("postsystem:saveCurrentClothing", function()
-    local src = source
-    local playerPed = PlayerPedId()
-    local clothing = {
-        tshirt_1 = GetPedDrawableVariation(playerPed, 8),
-        tshirt_2 = GetPedTextureVariation(playerPed, 8),
-        torso_1 = GetPedDrawableVariation(playerPed, 11),
-        torso_2 = GetPedTextureVariation(playerPed, 11),
-        arms = GetPedDrawableVariation(playerPed, 3),
-        pants_1 = GetPedDrawableVariation(playerPed, 4),
-        pants_2 = GetPedTextureVariation(playerPed, 4),
-        shoes_1 = GetPedDrawableVariation(playerPed, 6),
-        shoes_2 = GetPedTextureVariation(playerPed, 6)
-    }
-    playerClothing[src] = clothing -- Speichere die Kleidung in der Tabelle
-end)
-
--- Event zum Anziehen der Uniform
-RegisterNetEvent("postsystem:setPostmanUniform")
-AddEventHandler("postsystem:setPostmanUniform", function()
-    local playerPed = PlayerPedId()
-    local gender = IsPedMale(playerPed) and "male" or "female"
-    local uniform = Config.PostmanJob.Uniform[gender]
-
-    -- Uniform anziehen
-    SetPedComponentVariation(playerPed, 8, uniform.tshirt_1, uniform.tshirt_2, 2) -- T-Shirt
-    SetPedComponentVariation(playerPed, 11, uniform.torso_1, uniform.torso_2, 2) -- Oberkörper
-    SetPedComponentVariation(playerPed, 3, uniform.arms, 0, 2) -- Arme
-    SetPedComponentVariation(playerPed, 4, uniform.pants_1, uniform.pants_2, 2) -- Hose
-    SetPedComponentVariation(playerPed, 6, uniform.shoes_1, uniform.shoes_2, 2) -- Schuhe
-end)
-
--- Funktion zum Beenden des Postboten-Jobs
-RegisterServerEvent("postsystem:quitPostmanJob")
-AddEventHandler("postsystem:quitPostmanJob", function()
-    local src = source
-    local player = ESX.GetPlayerFromId(src)
-    if not player then return end
-
-    -- Setze den Job des Spielers zurück auf den Standard-Job
-    player.setJob(Config.DefaultJob.JobName, Config.DefaultJob.Grade)
-
-    -- Normale Kleidung wiederherstellen
-    TriggerClientEvent("postsystem:restoreNormalClothing", src)
-
-    -- Benachrichtigung
-    TriggerClientEvent("esx:showNotification", src, "🚪 Du hast den Postboten-Job beendet und deine normale Kleidung angezogen.")
-end)
-
--- Event zum Wiederherstellen der normalen Kleidung
-RegisterNetEvent("postsystem:restoreNormalClothing")
-AddEventHandler("postsystem:restoreNormalClothing", function()
-    local src = source
-    local playerPed = PlayerPedId()
-    local clothing = playerClothing[src] -- Hole die gespeicherte Kleidung
-
-    if clothing then
-        -- Normale Kleidung anziehen
-        SetPedComponentVariation(playerPed, 8, clothing.tshirt_1, clothing.tshirt_2, 2) -- T-Shirt
-        SetPedComponentVariation(playerPed, 11, clothing.torso_1, clothing.torso_2, 2) -- Oberkörper
-        SetPedComponentVariation(playerPed, 3, clothing.arms, 0, 2) -- Arme
-        SetPedComponentVariation(playerPed, 4, clothing.pants_1, clothing.pants_2, 2) -- Hose
-        SetPedComponentVariation(playerPed, 6, clothing.shoes_1, clothing.shoes_2, 2) -- Schuhe
-
-        -- Entferne die gespeicherte Kleidung aus der Tabelle
-        playerClothing[src] = nil
-    else
-        TriggerClientEvent("esx:showNotification", src, "❌ Es wurde keine gespeicherte Kleidung gefunden!")
-    end
-end)
-
--- Funktion zum Abrufen des Levels und der XP
-function GetPostmanLevel(identifier, callback)
-    MySQL.Async.fetchScalar('SELECT level FROM postman_levels WHERE identifier = ?', { identifier }, function(level)
-        if level then
-            callback(level)
-        else
-            -- Wenn der Spieler noch keinen Eintrag hat, erstelle einen neuen
-            MySQL.Async.execute('INSERT INTO postman_levels (identifier, level, xp) VALUES (?, 1, 0)', { identifier }, function()
-                callback(1) -- Standard-Level
-            end)
+    MySQL.Async.fetchAll(query, {}, function(packages)
+        if #packages == 0 then
+            TriggerClientEvent('esx:showNotification', src, 'Es gibt keine Pakete zum Ausliefern.')
+            return
         end
-    end)
-end
 
--- Funktion zum Hinzufügen von XP
-function AddPostmanXP(identifier, xp)
-    MySQL.Async.fetchScalar('SELECT xp FROM postman_levels WHERE identifier = ?', { identifier }, function(currentXP)
-        local newXP = currentXP + xp
-        MySQL.Async.execute('UPDATE postman_levels SET xp = ? WHERE identifier = ?', { newXP, identifier }, function()
-            CheckLevelUp(identifier, newXP)
-        end)
-    end)
-end
-
--- Funktion zum Überprüfen, ob ein Level-Up erreicht wurde
-function CheckLevelUp(identifier, xp)
-    for _, levelData in ipairs(Config.PostmanJob.Levels) do
-        if xp >= levelData.xpRequired then
-            MySQL.Async.execute('UPDATE postman_levels SET level = ? WHERE identifier = ?', { levelData.level, identifier }, function()
-                TriggerClientEvent("postsystem:notify", GetPlayerFromIdentifier(identifier), "Du bist jetzt Level " .. levelData.level .. "!")
-            end)
+        local packageIds = {}
+        for _, package in ipairs(packages) do
+            table.insert(packageIds, package.id)
         end
-    end
-end
 
--- Zustellungen abrufen
-RegisterServerEvent("postsystem:fetchDeliveries")
-AddEventHandler("postsystem:fetchDeliveries", function()
-    local src = source
-    local identifier = GetPlayerIdentifiers(src)[1]
-
-    GetPostmanLevel(identifier, function(level)
-        MySQL.Async.fetchAll('SELECT * FROM mail_queue WHERE delivered = false', {}, function(deliveries)
-            local allowedDeliveries = {}
-
-            for _, delivery in ipairs(deliveries) do
-                if delivery.delivery_type == "briefe" or (delivery.delivery_type == "pakete" and level >= 5) or (delivery.delivery_type == "illegale_pakete" and level >= 10) then
-                    table.insert(allowedDeliveries, delivery)
+        -- Aktualisiere den Status der Pakete auf 'in-transit' und weise sie dem Postboten zu
+        MySQL.Async.execute(
+            'UPDATE post_packages SET status = "in-transit", assigned_postman = @postman WHERE id IN (' .. table.concat(packageIds, ',') .. ')',
+            { ['@postman'] = player.identifier },
+            function(affectedRows)
+                if affectedRows > 0 then
+                    -- Sende die Route (mit Briefkasten-Koordinaten) an den Client
+                    local routeData = {}
+                    for _, package in ipairs(packages) do
+                        table.insert(routeData, {
+                            packageId = package.id,
+                            mailboxId = package.mailbox_id,
+                            location = json.decode(package.mailbox_location)
+                        })
+                    end
+                    TriggerClientEvent('postsystem:startRoute', src, routeData)
+                    TriggerClientEvent('esx:showNotification', src, 'Route mit ' .. #packages .. ' Paketen gestartet.')
+                else
+                    TriggerClientEvent('esx:showNotification', src, 'Fehler beim Starten der Route.')
                 end
             end
-
-            TriggerClientEvent("postsystem:startDeliveries", src, allowedDeliveries)
-        end)
+        )
     end)
 end)
 
--- Zustellung abschließen
-RegisterServerEvent("postsystem:completeDelivery")
-AddEventHandler("postsystem:completeDelivery", function(deliveryId, deliveryType)
-    local src = source
-    local identifier = GetPlayerIdentifiers(src)[1]
-
-    -- Belohne den Postboten
-    local xpReward = Config.PostmanJob.XPRewards[deliveryType] or 0
-    AddPostmanXP(identifier, xpReward)
-
-    MySQL.Async.execute('UPDATE mail_queue SET delivered = true WHERE id = ?', { deliveryId }, function()
-        TriggerClientEvent("postsystem:notify", src, "Zustellung abgeschlossen! Du erhälst $" .. Config.PostmanJob.Salary .. " und " .. xpReward .. " XP!")
-        AddMoney(src, Config.PostmanJob.Salary)
-    end)
-end)
-
--- Funktion zum Hinzufügen von Geld
-function AddMoney(playerId, amount)
-    -- Hier kannst du deine Geld-Hinzufügen-Logik implementieren
-    TriggerClientEvent("postsystem:notify", playerId, "Du hast $" .. amount .. " erhalten!")
-end
-
--- Funktion zum Spawnen eines Postboten-Fahrzeugs
-RegisterServerEvent("postsystem:spawnPostmanVehicle")
-AddEventHandler("postsystem:spawnPostmanVehicle", function(vehicleModel)
+-- Event: Paket ausliefern
+RegisterNetEvent('postsystem:deliverPackage')
+AddEventHandler('postsystem:deliverPackage', function(packageId, mailboxId)
     local src = source
     local player = ESX.GetPlayerFromId(src)
     if not player then return end
 
-    -- Überprüfe, ob der Spieler den Postboten-Job hat
-    if player.job.name ~= Config.PostmanJob.JobName then
-        TriggerClientEvent("esx:showNotification", src, "❌ Du bist kein Postbote!")
-        return
-    end
+    -- Hole das Paket und überprüfe, ob es dem Spieler zugewiesen ist
+    MySQL.Async.fetchAll(
+        'SELECT * FROM post_packages WHERE id = @id AND assigned_postman = @postman AND status = "in-transit"',
+        { ['@id'] = packageId, ['@postman'] = player.identifier },
+        function(result)
+            local package = result[1]
+            if not package then
+                TriggerClientEvent('esx:showNotification', src, '❌ Dieses Paket ist nicht für dich oder wurde bereits zugestellt.')
+                return
+            end
 
-    -- Spawne das Fahrzeug
-    TriggerClientEvent("postsystem:spawnVehicle", src, vehicleModel)
-end)
+            -- Hole den Briefkasten
+            MySQL.Async.fetchAll(
+                'SELECT * FROM player_mailboxes WHERE id = @id',
+                { ['@id'] = mailboxId },
+                function(mailboxes)
+                    if #mailboxes == 0 then
+                        TriggerClientEvent('esx:showNotification', src, '❌ Briefkasten nicht gefunden.')
+                        return
+                    end
+                    local mailbox = mailboxes[1]
+                    local inventory = mailbox.inventory and json.decode(mailbox.inventory) or {}
 
--- Funktion zum Abrufen der Fahrzeugliste
-ESX.RegisterServerCallback("postsystem:getPostmanVehicles", function(source, cb)
-    cb(Config.PostmanJob.Vehicles)
+                    -- Füge das Item zum Briefkasten-Inventar hinzu
+                    local itemAdded = false
+                    for i, item in ipairs(inventory) do
+                        if item.name == package.item_name then
+                            inventory[i].count = item.count + package.item_count
+                            itemAdded = true
+                            break
+                        end
+                    end
+                    if not itemAdded then
+                        -- TODO: Get item label from database or config
+                        table.insert(inventory, { name = package.item_name, count = package.item_count, label = package.item_name })
+                    end
+
+                    -- Aktualisiere das Paket und das Briefkasten-Inventar
+                    MySQL.Async.execute('UPDATE post_packages SET status = "delivered" WHERE id = @id', {['@id'] = package.id})
+                    MySQL.Async.execute('UPDATE player_mailboxes SET inventory = @inv WHERE id = @id', {['@inv'] = json.encode(inventory), ['@id'] = mailbox.id},
+                        function(affectedRows)
+                            if affectedRows > 0 then
+                                TriggerClientEvent('esx:showNotification', src, '📦 Paket erfolgreich zugestellt!')
+                                -- TODO: Belohnung für Postboten etc. hier einfügen
+
+                                -- Benachrichtige den Empfänger
+                                local targetPlayer = ESX.GetPlayerFromIdentifier(package.receiver_identifier)
+                                if targetPlayer then
+                                    TriggerClientEvent('esx:showNotification', targetPlayer.source, 'Dein Paket mit '..package.item_count..'x '..package.item_name..' wurde soeben geliefert!')
+                                end
+
+                                -- Sage dem Client, dass die Lieferung erfolgreich war
+                                TriggerClientEvent('postsystem:deliverySuccess', src, packageId)
+                            end
+                        end
+                    )
+                end
+            )
+        end
+    )
 end)
