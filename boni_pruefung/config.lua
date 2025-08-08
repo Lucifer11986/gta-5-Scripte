@@ -28,3 +28,16 @@ Config.CreditLimits = {
     [600] = 20000,  -- Bonität zwischen 300-599: Maximal 20000$
     [800] = 50000   -- Bonität ab 600: Maximal 50000$
 }
+
+-- Zinsen basierend auf Bonität
+Config.InterestRates = {
+    [300] = 10, -- Bonität unter 300: 10% Zinsen
+    [600] = 5,  -- Bonität zwischen 300-599: 5% Zinsen
+    [800] = 2   -- Bonität ab 600: 2% Zinsen
+}
+
+-- Strafzahlungen bei Kreditverspätungen
+Config.MissedPaymentPenalty = 5 -- % Abzug von Bonität pro verpasster Zahlung
+
+-- Versicherungskosten (monatlich)
+Config.InsuranceCost = 100
