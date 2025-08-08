@@ -8,6 +8,7 @@ version '1.2'
 lua54 'yes'
 
 shared_script '@es_extended/imports.lua'
+shared_script 'config.lua'
 
 client_scripts {
     'client/hud.lua'
@@ -22,7 +23,8 @@ ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/style.css',
-    'html/script.js'
+    'html/script.js',
+    'config.lua'
 }
 
 escrow_ignore {

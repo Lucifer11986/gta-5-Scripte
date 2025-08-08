@@ -1,52 +1,82 @@
 local ESX = exports['es_extended']:getSharedObject()
-local temperature = 15 -- Standardwert setzen
 
--- Temperatur regelmäßig vom Server abrufen
+-- Initialize local variables for needs
+local hunger = 100.0
+local thirst = 100.0
+local energy = 100.0
+local temperature = 15 -- Default value
+
+-- Thread for decaying needs over time
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(10000) -- Temperatur nur alle 10 Sekunden abrufen (Performance-Optimierung)
-        ESX.TriggerServerCallback("weather:getTemperature", function(temp)
-            if temp then
-                temperature = temp -- Temperatur speichern, damit sie in der HUD-Schleife aktualisiert wird
-            end
-        end)
+        -- Wait for 1 minute
+        Citizen.Wait(60000)
+
+        if Config.UseInternalNeeds then
+            hunger = math.max(0, hunger - Config.HungerDecay)
+            thirst = math.max(0, thirst - Config.ThirstDecay)
+            energy = math.max(0, energy - Config.EnergyDecay)
+        end
     end
 end)
 
+-- Thread for fetching temperature
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(500) -- Aktualisierung alle 500ms für flüssigere Werteänderung
+        -- Wait for 10 seconds as in the original script
+        Citizen.Wait(10000)
+
+        -- Use the configurable resource name for temperature
+        if Config.WeatherResourceName and exports[Config.WeatherResourceName] and exports[Config.WeatherResourceName].GetTemperature then
+            local tempValue = exports[Config.WeatherResourceName]:GetTemperature()
+            if tempValue then
+                temperature = tempValue
+            end
+        else
+            -- You can uncomment the line below to debug if the temperature export is not found.
+            -- print('Awaria HUD: Could not find export GetTemperature in resource ' .. (Config.WeatherResourceName or 'nil'))
+        end
+    end
+end)
+
+-- Main HUD update thread
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500) -- Update interval
 
         local playerPed = PlayerPedId()
-        local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100 -- Normalisiert auf 0-100
+        local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100
         local armor = GetPedArmour(playerPed)
 
-        -- HINWEIS: Die folgenden Exporte hängen von den Skripten ab, die du auf deinem Server verwendest.
-        -- Passe die Namen ("needs_script", "drug_script") entsprechend an.
-        local hunger = exports["needs_script"]:GetHunger() or 100
-        local thirst = exports["needs_script"]:GetThirst() or 100
-        local energy = exports["needs_script"]:GetEnergy() or 100
-        -- Passe "drug_script" bei Bedarf an den Namen deines Drogen-Skripts an.
-        local addiction = exports["drug_script"]:GetAddictionLevel() or 0
-        local needs = exports["needs_script"]:GetNeeds() or 100
+        local addiction = 0
+        -- Use the configurable resource name for addiction
+        if Config.AddictionResourceName and exports[Config.AddictionResourceName] and exports[Config.AddictionResourceName].GetAddictionLevel then
+            addiction = exports[Config.AddictionResourceName]:GetAddictionLevel() or 0
+        end
+
+        local needsData = {
+            hunger = math.floor(hunger),
+            thirst = math.floor(thirst),
+            energy = math.floor(energy)
+        }
+
+        -- This part handles if the user turns off the internal needs system.
+        -- In that case, they would need to integrate their own script.
+        if not Config.UseInternalNeeds then
+            needsData.hunger = 100 -- Default display value
+            needsData.thirst = 100 -- Default display value
+            needsData.energy = 100 -- Default display value
+        end
 
         SendNUIMessage({
             type = "update",
             health = math.floor(health),
             armor = armor,
-            hunger = hunger,
-            thirst = thirst,
-            energy = energy,
+            hunger = needsData.hunger,
+            thirst = needsData.thirst,
+            energy = needsData.energy,
             addiction = addiction,
-            needs = needs,
-            temperature = temperature -- Aktualisierte Temperatur wird hier verwendet
+            temperature = temperature
         })
     end
-end)
-
-RegisterNUICallback('moveHUD', function()
-    SendNUIMessage({
-        type = "moveHUD",
-        position = { x = 0.02, y = 0.75 } -- Position höher über die Minimap gesetzt
-    })
 end)
