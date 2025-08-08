@@ -1,24 +1,37 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- Diese Funktion überprüft die Kleidung des Spielers und gibt einen Multiplikator zurück.
-function getClothingMultiplier()
+local isFreezing = false
+
+-- Diese Funktion überprüft, ob der Spieler warme Kleidung trägt.
+function isWearingWarmClothes()
     local playerPed = PlayerPedId()
-    local multiplier = 1.0 -- Standard-Multiplikator
 
     -- Überprüfe die Jacke (Component ID 11)
     local jacketId = GetPedDrawableVariation(playerPed, 11)
     if Config.WarmClothing.jackets[jacketId] then
-        multiplier = Config.Survival.ClothingMultiplier
-        return multiplier -- Wenn eine warme Jacke getragen wird, ist der höchste Multiplikator erreicht
+        return true -- Spieler trägt eine warme Jacke
     end
 
-    -- Hier könnten weitere Checks für andere Kleidungsstücke (Hosen, etc.) hinzugefügt werden
+    -- Hier könnten weitere Checks für Hosen etc. hinzugefügt werden
 
-    return multiplier
+    return false -- Spieler trägt keine ausreichend warme Kleidung
 end
 
--- Registriere einen Server-Callback, damit der Server den Multiplikator abfragen kann
-ESX.RegisterServerCallback('survival:getClothingMultiplier', function(source, cb)
-    local multiplier = getClothingMultiplier()
-    cb(multiplier)
+-- Registriere einen Server-Callback, damit der Server den Kleidungsstatus abfragen kann
+ESX.RegisterServerCallback('survival:isWearingWarmClothes', function(source, cb)
+    local isWarm = isWearingWarmClothes()
+    cb(isWarm)
+end)
+
+-- Event, um den visuellen Frier-Effekt zu steuern
+RegisterNetEvent('survival:setFreezingEffect')
+AddEventHandler('survival:setFreezingEffect', function(shouldBeFreezing)
+    if shouldBeFreezing and not isFreezing then
+        isFreezing = true
+        SetTimecycleModifier("hud_def_colorgrade_ice")
+        SetTimecycleModifierStrength(0.4)
+    elseif not shouldBeFreezing and isFreezing then
+        isFreezing = false
+        ClearTimecycleModifier()
+    end
 end)

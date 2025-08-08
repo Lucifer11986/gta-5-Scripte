@@ -3,21 +3,23 @@ game 'gta5'
 
 author 'Lucifer | Awaria Modding'
 description 'Dynamisches Wetter und Jahreszeiten'
-version '2.1.0' -- Version erhöht, da neue Features hinzugefügt wurden
+version '2.3.0' -- Version erhöht
 
 -- Client-Skripte
 client_scripts {
     'client/client.lua',
     'client/oster_event.lua',
-    'client/autumn_event.lua', -- NEU
-    'client/winter_event.lua', -- NEU
-    -- 'client/season_events.lua', -- Start Kirschblüten-Event (DEAKTIVIERT, um Konflikt zu lösen)
+    'client/autumn_event.lua',
+    'client/winter_event.lua',
+    -- 'client/season_events.lua', -- (DEAKTIVIERT)
     'client/plant_visuals.lua',
     'client/plant_interaction.lua',
     'client/plant_ui.lua',
     'client/sommer_events.lua',
 	'client/sommermarkt.lua',
     'client/survival_effects.lua',
+    'client/environmental_effects.lua',
+    'client/dynamic_events.lua', -- NEU
     'config.lua'
 }
 
@@ -27,16 +29,17 @@ server_scripts {
     -- '@mysql-async/lib/MySQL.lua',
     'server/server.lua',
     'server/oster_event.lua',
-    'server/autumn_event.lua', -- NEU
-    'server/winter_event.lua', -- NEU
+    'server/autumn_event.lua',
+    'server/winter_event.lua',
     'server/weather_seasons.lua',
-    -- 'server/season_events.lua', -- (DEAKTIVIERT, um Konflikt zu lösen)
+    -- 'server/season_events.lua', -- (DEAKTIVIERT)
     'server/plant_growth.lua',
     'server/plant_effects.lua',
     'server/sommer_events.lua',
 	'server/sommermarkt.lua',
 	'server/hitzwelle.lua',
     'server/survival_effects.lua',
+    'server/dynamic_events.lua', -- NEU
     'config.lua'
 }
 

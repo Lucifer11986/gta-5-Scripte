@@ -152,7 +152,11 @@ Config.Survival = {
     HotTemperature = 28, -- Temperatur, ab der der Durst bei Hitze sinkt
     ThirstRate = 2, -- Wie viel Durst pro Intervall bei Hitze abgezogen wird (von 100)
     HeatDamage = 5, -- Wie viel Leben pro Intervall bei einem Hitzschlag verloren geht
-    ClothingMultiplier = 1.5 -- Faktor, um den der Durst bei warmer Kleidung schneller sinkt
+    ClothingMultiplier = 1.5, -- Faktor, um den der Durst bei warmer Kleidung schneller sinkt
+
+    -- NEU: Kälte-Mechanik
+    ColdTemperature = 0, -- Temperatur, ab der man Schaden durch Frieren erleidet
+    FreezingDamage = 3 -- Wie viel Leben pro Intervall bei Frieren verloren geht
 }
 
 -- Kleidungskonfiguration für Hitzeeffekte
@@ -227,5 +231,32 @@ Config.WinterEvent = {
         common = 70,
         rare = 25,
         very_rare = 5
+    }
+}
+
+-- ⚡ Dynamische Wetter-Events
+Config.DynamicEvents = {
+    CheckIntervalMinutes = 5, -- Alle wie viele Minuten soll auf ein Event geprüft werden
+    PowerOutage = {
+        Chance = 0.20, -- 20% Chance bei Gewitter
+        DurationMinutes = { min = 3, max = 8 }, -- Dauer in Minuten
+        Locations = {
+            { name = "Rockford Hills", coords = vector3(-816.0, 178.0, 72.0), radius = 300.0 },
+            { name = "Vinewood", coords = vector3(230.0, 185.0, 105.0), radius = 250.0 }
+        }
+    },
+    Bushfire = {
+        Chance = 0.15, -- 15% Chance bei Hitzewelle
+        Locations = {
+            vector3(2450.0, 4970.0, 46.0), -- Beispiel im Wald
+            vector3(-1500.0, 4600.0, 40.0)  -- Beispiel in den Hügeln
+        }
+    },
+    Blizzard = {
+        Chance = 0.30, -- 30% Chance bei Schneesturm
+        BlockedRoads = {
+            { name = "Great Ocean Highway", coords = vector3(-2400.0, 2400.0, 10.0) },
+            { name = "Paleto Bay", coords = vector3(150.0, 6600.0, 31.0) }
+        }
     }
 }
