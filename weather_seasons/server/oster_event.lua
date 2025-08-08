@@ -1,5 +1,8 @@
 ESX = exports["es_extended"]:getSharedObject()
 
+-- Initialisiere den Zufallsgenerator einmal mit der Systemzeit für bessere Zufälligkeit
+math.randomseed(os.time())
+
 -- Lade die Konfigurationsdatei und überprüfe, ob sie geladen wurde
 local configData = LoadResourceFile(GetCurrentResourceName(), "config.lua")
 print(configData)  -- Debugging: Zeige den Inhalt der geladenen Konfiguration
@@ -36,7 +39,7 @@ local eggModels = {
     "core_egg06"
 }
 
--- Funktion zum Abrufen zufälliger Osterei-Positionen
+-- Funktion zum Abrufen zufälliger Osterei-Positionen (Korrekter Fisher-Yates-Shuffle)
 local function getRandomEggLocations(num)
     local randomLocations = {}
     local shuffledLocations = {}
@@ -46,11 +49,9 @@ local function getRandomEggLocations(num)
         table.insert(shuffledLocations, pos)
     end
 
-    -- Mische die Positionen zufällig
+    -- Mische die Positionen mit dem Fisher-Yates-Algorithmus
     for i = #shuffledLocations, 2, -1 do
-        math.randomseed(os.clock())
-        math.random(i)
-        local j = math.random(1,50)
+        local j = math.random(i) -- Wähle einen zufälligen Index aus dem verbleibenden Teil
         shuffledLocations[i], shuffledLocations[j] = shuffledLocations[j], shuffledLocations[i]
     end
 
@@ -150,7 +151,7 @@ end)
 
 -- Sicherstellen, dass die Tabelle in der Datenbank existiert, wenn das Event gestartet wird
 CreateThread(function()
-    exports.oxmysql:executeSync([[ 
+    exports.oxmysql:executeSync([[
         CREATE TABLE IF NOT EXISTS easter_eggs_locations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             x FLOAT NOT NULL,
