@@ -1,20 +1,9 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- Lade die Config-Datei
-local configContent = LoadResourceFile(GetCurrentResourceName(), "config.lua")
-if configContent then
-    local env = {}
-    local func, err = load(configContent, "config.lua", "t", env)
-    if func then
-        local success, loadErr = pcall(func)
-        if success then
-            Config = env.Config
-        end
-    end
-end
-
 local currentSeasonIndex = 1
-local currentTemperature = Config.Seasons[currentSeasonIndex].temperature
+-- Setze die Starttemperatur basierend auf der ersten Jahreszeit in der Config
+local initialSeasonData = Config.Seasons[currentSeasonIndex]
+local currentTemperature = math.random(initialSeasonData.min_temp, initialSeasonData.max_temp)
 local currentWeather = "Clear" -- Standardwert für das Wetter
 
 function GetCurrentSeason()
@@ -63,8 +52,9 @@ local function ChangeSeason()
         currentSeasonIndex = 1
     end
 
-    currentTemperature = Config.Seasons[currentSeasonIndex].temperature
-    local seasonName = Config.Seasons[currentSeasonIndex].name
+    local seasonData = Config.Seasons[currentSeasonIndex]
+    currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+    local seasonName = seasonData.name
 
     TriggerClientEvent("season:updateSeason", -1, seasonName, currentTemperature)
     TriggerClientEvent("season:notifySeasonChange", -1, seasonName)

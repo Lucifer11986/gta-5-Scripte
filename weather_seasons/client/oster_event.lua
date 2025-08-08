@@ -147,6 +147,22 @@ AddEventHandler("easter_event:createEggs", function(eggs)
             eggBlips[index] = blip
         end
     end
+
+-- Event zum Entfernen ALLER Eier und Blips, wenn das Event endet
+RegisterNetEvent("easter_event:removeAllEggs")
+AddEventHandler("easter_event:removeAllEggs", function()
+    -- Entferne alle Blips
+    for i, blip in pairs(eggBlips) do
+        RemoveBlip(blip)
+    end
+    eggBlips = {}
+
+    -- Entferne alle Ei-Objekte
+    for i, egg in pairs(spawnedEggs) do
+        DeleteObject(egg)
+    end
+    spawnedEggs = {}
+end)
 end)
 
 -- Animation beim Aufheben des Eis
