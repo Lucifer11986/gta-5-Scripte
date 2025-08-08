@@ -17,7 +17,6 @@ function isWearingWarmClothes()
     return false -- Spieler trägt keine ausreichend warme Kleidung
 end
 
--- Registriere einen Server-Callback, damit der Server den Kleidungsstatus abfragen kann
 -- Registriere einen Client-Callback, damit der Server den Kleidungsstatus abfragen kann
 ESX.RegisterClientCallback('survival:isWearingWarmClothes', function(cb)
     local isWarm = isWearingWarmClothes()
@@ -43,7 +42,7 @@ AddEventHandler('season:notifySeasonChange', function(seasonName)
     local title = "Die Jahreszeit hat gewechselt"
     local message = "Willkommen im ~y~" .. seasonName .. "~s~!"
     local icon = "CHAR_CALENDAR" -- Kalender-Icon
-
+    
     -- Nutze eine große, zentrierte Benachrichtigung
     ESX.ShowAdvancedNotification(title, "Wetter-Update", message, icon, 1)
 end)
