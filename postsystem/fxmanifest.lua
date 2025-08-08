@@ -25,9 +25,10 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua', -- MySQL-Bibliothek
     'server/main.lua',
     'server/postman.lua', -- Neue Datei für den Postboten-Job
-    'server/mailbox.lua', -- Neue Datei für Briefkästen
-    'config.lua'
+    'server/mailbox.lua' -- Neue Datei für Briefkästen
 }
+
+sql 'sql.sql'
 
 ui_page 'html/ui.html' -- Stellt sicher, dass die UI-Datei geladen wird
 
@@ -37,5 +38,6 @@ files {
     'html/ui.js',
     'html/locker.html',
     'html/locker.js',
-    'html/images/post_logo.png'
+    'html/images/post_logo.png',
+    'sql.sql'
 }
