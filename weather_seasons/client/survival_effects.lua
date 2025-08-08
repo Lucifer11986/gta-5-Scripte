@@ -35,3 +35,14 @@ AddEventHandler('survival:setFreezingEffect', function(shouldBeFreezing)
         ClearTimecycleModifier()
     end
 end)
+
+-- Event für die große Benachrichtigung beim Jahreszeitenwechsel
+RegisterNetEvent('season:notifySeasonChange')
+AddEventHandler('season:notifySeasonChange', function(seasonName)
+    local title = "Die Jahreszeit hat gewechselt"
+    local message = "Willkommen im ~y~" .. seasonName .. "~s~!"
+    local icon = "CHAR_CALENDAR" -- Kalender-Icon
+    
+    -- Nutze eine große, zentrierte Benachrichtigung
+    ESX.ShowAdvancedNotification(title, "Wetter-Update", message, icon, 1)
+end)

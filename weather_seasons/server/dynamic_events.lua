@@ -20,6 +20,7 @@ function StartBushfire()
     isEventActive = true
     local eventConfig = Config.DynamicEvents.Bushfire
     local location = eventConfig.Locations[math.random(#eventConfig.Locations)]
+    -- Korrekter Aufruf des Server-Natives
     StartScriptFire(location.x, location.y, location.z, 25, true)
     TriggerClientEvent("esx:showNotification", -1, "Ein Buschfeuer ist ausgebrochen! Die Feuerwehr wird alarmiert.")
     SetTimeout(10 * 60000, function() isEventActive = false end)

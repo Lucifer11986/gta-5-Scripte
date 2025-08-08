@@ -59,6 +59,7 @@ function StopEasterEvent()
 end
 
 -- Event-Handler für die Saison-Änderung
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Frühling" then
         StartEasterEvent()
