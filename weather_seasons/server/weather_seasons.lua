@@ -103,3 +103,9 @@ end
 ESX.RegisterServerCallback("weather:getTemperature", function(source, cb)
     cb(GetCurrentTemperature())
 end)
+
+-- Exporte für andere Skripte innerhalb der Ressource
+exports("GetCurrentSeason", GetCurrentSeason)
+exports("GetCurrentTemperature", GetCurrentTemperature)
+exports("GetCurrentWeather", GetCurrentWeather)
+exports("IsHeatwaveActive", IsHeatwaveActive)
