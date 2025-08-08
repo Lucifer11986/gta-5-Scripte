@@ -17,8 +17,8 @@ function isWearingWarmClothes()
     return false -- Spieler trägt keine ausreichend warme Kleidung
 end
 
--- Registriere einen Server-Callback, damit der Server den Kleidungsstatus abfragen kann
-ESX.RegisterServerCallback('survival:isWearingWarmClothes', function(source, cb)
+-- Registriere einen Client-Callback, damit der Server den Kleidungsstatus abfragen kann
+ESX.RegisterClientCallback('survival:isWearingWarmClothes', function(cb)
     local isWarm = isWearingWarmClothes()
     cb(isWarm)
 end)
