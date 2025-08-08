@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post System</title>
+    <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+    <div class="ui-container" id="ui" style="display: none;">
+        <h1>📮 Poststation</h1>
+
+        <!-- 📌 Poststation Auswahl -->
+        <label for="station">Poststation wählen:</label>
+        <select id="station">
+            <option value="">Wähle eine Poststation</option>
+        </select>
+
+        <!-- 👥 Spieler Auswahl -->
+        <label for="receiver">Empfänger wählen:</label>
+        <select id="receiver">
+            <option value="">Spieler auswählen</option>
+        </select>
+
+        <!-- 👥 Gruppe Auswahl -->
+        <label for="faction">Gruppe wählen:</label>
+        <select id="faction">
+            <option value="">Wähle eine Gruppe</option>
+        </select>
+
+        <!-- 📝 Nachricht schreiben -->
+        <label for="message">Nachricht:</label>
+        <textarea id="message" placeholder="Schreibe deine Nachricht hier..." maxlength="160"></textarea>
+        <p id="charCount">Zeichen übrig: 160</p>
+
+        <!-- ⚡ Express-Versand -->
+        <label for="express">
+            <input type="checkbox" id="express"> Express-Versand (kostet mehr)
+        </label>
+
+        <button id="sendMail">📨 Versenden</button>
+
+        <!-- 📬 Posteingang -->
+        <h2>📥 Posteingang</h2>
+        <ul id="mailList"></ul>
+
+        <!-- 📜 Vorschau des gelesenen Briefes -->
+        <div id="mailPreview" style="display: none;">
+            <h3>📜 Brief von <span id="mailSender"></span></h3>
+            <p id="mailMessage"></p>
+            <button id="replyMail">📨 Antworten</button>
+            <button id="closeMailPreview">❌ Schließen</button>
+            <button id="deleteMail">🗑️ Löschen</button>
+        </div>
+
+        <button id="closeUI">❌ Schließen</button>
+    </div>
+    <script src="ui.js"></script>
+</body>
+</html>

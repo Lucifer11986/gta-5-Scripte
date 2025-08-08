@@ -1,0 +1,119 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.ui-container {
+    width: 400px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+textarea, select, input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+textarea {
+    height: 80px;
+    resize: none;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+/* Stile für die Mail-Liste */
+#mailList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px; /* Maximale Höhe für die Mail-Liste */
+    overflow-y: auto; /* Scrollbar hinzufügen, falls nötig */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #f9f9f9;
+    margin-bottom: 10px;
+}
+
+.mail-item {
+    background: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    word-wrap: break-word; /* Textumbruch erzwingen */
+}
+
+.mail-item:last-child {
+    border-bottom: none; /* Keine untere Grenze für das letzte Element */
+}
+
+.mail-item strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.mail-item button {
+    margin-top: 10px;
+    background: #dc3545;
+}
+
+.mail-item button:hover {
+    background: #c82333;
+}
+
+/* Stile für die Mail-Vorschau */
+#mailPreview {
+    display: none;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: left;
+    word-wrap: break-word; /* Textumbruch erzwingen */
+}
+
+#mailPreview h3 {
+    margin-top: 0;
+}
+
+#mailPreview p {
+    margin: 0;
+}
+
+#mailPreview button {
+    margin-top: 10px;
+    width: auto;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+#deleteMail {
+    background: #dc3545;
+}
+
+#deleteMail:hover {
+    background: #c82333;
+}
