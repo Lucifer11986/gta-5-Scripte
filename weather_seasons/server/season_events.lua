@@ -2,13 +2,22 @@ ESX = exports["es_extended"]:getSharedObject()
 
 local currentSeasonIndex = 1
 local currentTemperature = 15
+local seasons = {}
 
-local seasonTemperatures = {
-    ["Frühling"] = { min = 8, max = 18 },
-    ["Sommer"] = { min = 20, max = 35 },
-    ["Herbst"] = { min = 10, max = 20 },
-    ["Winter"] = { min = -5, max = 5 }
-}
+-- Fülle die `seasons` Tabelle dynamisch aus der Konfiguration
+for i, seasonData in ipairs(Config.Seasons) do
+    seasons[i] = seasonData.name
+end
+
+-- Hilfsfunktion, um die Temperaturdaten für eine Jahreszeit aus der Config zu holen
+function GetSeasonTempData(seasonName)
+    for _, seasonData in ipairs(Config.Seasons) do
+        if seasonData.name == seasonName then
+            return seasonData
+        end
+    end
+    return nil
+end
 
 -- **API, um die aktuelle Jahreszeit abzurufen**
 RegisterNetEvent("season:getSeasonInfo")
@@ -25,9 +34,9 @@ end)
 -- **API, um die Jahreszeit zu ändern**
 RegisterNetEvent("season:setSeason")
 AddEventHandler("season:setSeason", function(seasonName)
-    if seasonTemperatures[seasonName] then
-        local tempRange = seasonTemperatures[seasonName]
-        currentTemperature = math.random(tempRange.min, tempRange.max)
+    local seasonData = GetSeasonTempData(seasonName)
+    if seasonData then
+        currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
         currentSeasonIndex = GetSeasonIndex(seasonName)
         SaveSeasonAndTemperature(seasonName, currentTemperature)
         TriggerClientEvent("season_events:updateSeason", -1, seasonName, currentTemperature)
@@ -37,7 +46,6 @@ AddEventHandler("season:setSeason", function(seasonName)
 end)
 
 function GetCurrentSeason()
-    local seasons = {"Frühling", "Sommer", "Herbst", "Winter"}
     return seasons[currentSeasonIndex]
 end
 
@@ -46,14 +54,13 @@ function GetCurrentTemperature()
 end
 
 function UpdateTemperature(season)
-    if seasonTemperatures[season] then
-        local tempRange = seasonTemperatures[season]
-        currentTemperature = math.random(tempRange.min, tempRange.max)
+    local seasonData = GetSeasonTempData(season)
+    if seasonData then
+        currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
     end
 end
 
 function GetSeasonIndex(season)
-    local seasons = {"Frühling", "Sommer", "Herbst", "Winter"}
     for i, s in ipairs(seasons) do
         if s == season then
             return i
@@ -80,7 +87,10 @@ function LoadSeasonAndTemperature()
         else
             -- Falls keine gespeicherten Werte existieren, setze die Jahreszeit auf Frühling
             currentSeasonIndex = 1
-            currentTemperature = math.random(seasonTemperatures["Frühling"].min, seasonTemperatures["Frühling"].max)
+            local seasonData = GetSeasonTempData("Frühling")
+            if seasonData then
+                currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+            end
             SaveSeasonAndTemperature("Frühling", currentTemperature)
             TriggerClientEvent("season_events:updateSeason", -1, "Frühling", currentTemperature)
         end
@@ -146,7 +156,8 @@ RegisterCommand("setseason", function(source, args)
 
     if args[1] then
         local newSeason = args[1]:gsub("^%s*(.-)%s*$", "%1")  -- Trimmen der Leerzeichen
-        if GetSeasonIndex(newSeason) then
+        local seasonData = GetSeasonTempData(newSeason)
+        if seasonData then
             currentSeasonIndex = GetSeasonIndex(newSeason)
             UpdateTemperature(newSeason)
             SaveSeasonAndTemperature(newSeason, currentTemperature)
