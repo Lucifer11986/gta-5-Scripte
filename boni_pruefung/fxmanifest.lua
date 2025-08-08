@@ -9,7 +9,7 @@ lua54 'yes'
 -- Escrow-Schutz aktivieren
 escrow_ignore {
     'config.lua', -- Konfigurationsdatei von Escrow-Schutz ausnehmen
-    'readme.txt'
+    'README.md'
 }
 
  
@@ -27,8 +27,5 @@ server_scripts {
 }
 
 -- Exportierte Funktionen
-exports {
-    'ShowTemporaryNotification'
-}
 
 dependency '/assetpacks'
