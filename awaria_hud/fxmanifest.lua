@@ -14,7 +14,6 @@ client_scripts {
 }
 
 server_scripts {
-    '@oxmysql/lib/MySQL.lua', -- Falls du OxMySQL nutzt
     'server/server.lua'
 }
 

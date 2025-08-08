@@ -1,27 +1,49 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
     background: transparent;
     overflow: hidden;
+    color: white;
 }
 
-#hud {
+#hud-container {
     position: absolute;
-    bottom: 5%;
-    left: 2%;
-    width: 250px;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 10px;
-    border-radius: 10px;
-    color: white;
-    font-size: 14px;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
 }
 
 .hud-element {
-    margin: 5px 0;
-    padding: 5px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    text-align: left;
+    background: rgba(10, 10, 10, 0.75);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 80px; /* Ensures elements have a consistent minimum width */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icon {
+    font-size: 1.2em;
+}
+
+.value {
+    font-size: 1em;
+    font-weight: 700;
+    white-space: nowrap; /* Prevents text from wrapping */
+}
+
+/* Optional: Add specific colors for certain stats when they are low */
+#health .value {
+    color: #4CAF50; /* Green */
+}
+
+#armor .value {
+    color: #2196F3; /* Blue */
 }

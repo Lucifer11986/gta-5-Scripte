@@ -8,7 +8,6 @@ window.addEventListener('message', function(event) {
         document.getElementById("thirst-value").textContent = data.thirst + "%";
         document.getElementById("energy-value").textContent = data.energy + "%";
         document.getElementById("addiction-value").textContent = data.addiction + "%";
-        document.getElementById("needs-value").textContent = data.needs + "%";
         document.getElementById("temperature-value").textContent = data.temperature + "°C";
     }
 });
