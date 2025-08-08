@@ -180,7 +180,3 @@ AddEventHandler('boni_pruefung:payLoan', function(amount)
     local source = source
     handleLoanRepayment(source, amount)
 end)
-
--- The old getPlayerCreditInfo seems unused by the client, so I'm removing it to avoid confusion.
--- If it's needed, it should be updated to use the correct table and provide useful info.
--- ESX.RegisterServerCallback("boni_pruefung:getPlayerCreditInfo", ...)
