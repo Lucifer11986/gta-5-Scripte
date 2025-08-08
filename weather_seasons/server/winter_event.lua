@@ -76,6 +76,7 @@ function StopWinterEvent()
     TriggerClientEvent("winter_event:removeAllPresents", -1)
 end
 
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Winter" then
         StartWinterEvent()

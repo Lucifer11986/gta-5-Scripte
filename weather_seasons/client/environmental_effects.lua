@@ -4,6 +4,7 @@ local isLeafEffectActive = false
 local leafEffectThread = nil
 
 -- Event-Handler, um die aktuelle Jahreszeit und Temperatur zu speichern
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     currentSeason = seasonName
     currentTemperature = temperature

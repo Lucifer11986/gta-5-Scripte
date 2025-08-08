@@ -80,6 +80,7 @@ function StopAutumnEvent()
     TriggerClientEvent("autumn_event:removeAllPumpkins", -1)
 end
 
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Herbst" then
         StartAutumnEvent()
