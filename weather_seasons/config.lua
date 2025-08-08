@@ -8,10 +8,10 @@ Config.ExpressMultiplier = 2  -- Expressversand kostet das Doppelte
 
 Config.SeasonDuration = 600 -- Zeit in Sekunden pro Saison (300 für Testzwecke, 600 für regulär)
 Config.Seasons = {
-    {name = 'Fruehling', temperature = 15},
-    {name = 'Sommer', temperature = 30},
-    {name = 'Herbst', temperature = 10},
-    {name = 'Winter', temperature = 0}
+    {name = "Frühling", min_temp = 8,  max_temp = 18},
+    {name = "Sommer",   min_temp = 20, max_temp = 35},
+    {name = "Herbst",   min_temp = 10, max_temp = 20},
+    {name = "Winter",   min_temp = -5, max_temp = 5}
 }
 Config.HeatwaveTemperature = 30
 
@@ -145,3 +145,25 @@ Config.MiniGameLocations = {
 -- 🌦️ Sommer-Wetter Dynamik
 Config.SummerWeather = {"EXTRASUNNY", "CLEAR", "CLOUDS"}
 Config.SummerNightWeather = {"CLEAR", "FOGGY"}
+
+-- 🌡️ Überlebens-Mechaniken
+Config.Survival = {
+    CheckInterval = 30, -- Intervall in Sekunden, in dem der Überlebensstatus geprüft wird
+    HotTemperature = 28, -- Temperatur, ab der der Durst bei Hitze sinkt
+    ThirstRate = 2, -- Wie viel Durst pro Intervall bei Hitze abgezogen wird (von 100)
+    HeatDamage = 5, -- Wie viel Leben pro Intervall bei einem Hitzschlag verloren geht
+    ClothingMultiplier = 1.5 -- Faktor, um den der Durst bei warmer Kleidung schneller sinkt
+}
+
+-- Kleidungskonfiguration für Hitzeeffekte
+Config.WarmClothing = {
+    -- Hier die Drawable-IDs für warme Kleidungsstücke eintragen
+    -- Eine Liste von IDs findest du z.B. auf altv.mp
+    jackets = { -- Component ID 11
+        [15] = true, [25] = true, [26] = true, [31] = true, [32] = true, [33] = true, [47] = true, [50] = true,
+        [51] = true, [55] = true, [69] = true, [94] = true, [121] = true, [124] = true, [131] = true,
+    },
+    pants = { -- Component ID 4
+        -- Hier könnten IDs für dicke Hosen stehen, falls gewünscht
+    }
+}

@@ -9,13 +9,13 @@ version '2.0.0'
 client_scripts {
     'client/client.lua',
     'client/oster_event.lua', -- Oster-Event
-    'client/season_events.lua', -- Start Kirschblüten-Event
+    -- 'client/season_events.lua', -- Start Kirschblüten-Event (DEAKTIVIERT, um Konflikt zu lösen)
     'client/plant_visuals.lua',  -- Pflanzenwachstum
     'client/plant_interaction.lua', -- Pflanzenwettereffekte
     'client/plant_ui.lua',
     'client/sommer_events.lua', -- Sommer-Events (Wasser-Battle und Ernte-Wettbewerb bereits hier)
 	'client/sommermarkt.lua', -- Sommermarket
-	'client/hitzewelle.lua',
+    'client/survival_effects.lua', -- NEU: Clientseitige Überlebens-Effekte
     'config.lua' -- config.lua wird nicht unter Escrow-Schutz gestellt
 }
 
@@ -26,12 +26,13 @@ server_scripts {
     'server/server.lua',
     'server/oster_event.lua', -- Oster-Event
     'server/weather_seasons.lua',   -- Wettersteuerung
-    'server/season_events.lua', -- Ereignisse und Saisons
+    -- 'server/season_events.lua', -- Ereignisse und Saisons (DEAKTIVIERT, um Konflikt zu lösen)
     'server/plant_growth.lua',  -- Pflanzenwachstum
     'server/plant_effects.lua', -- Pflanzenwettereffekte
     'server/sommer_events.lua',	-- Sommer-Events (Wasser-Battle und Ernte-Wettbewerb bereits hier)
 	'server/sommermarkt.lua', -- Sommermarket
 	'server/hitzwelle.lua',
+    'server/survival_effects.lua', -- NEU: Serverseitige Überlebens-Effekte
     'config.lua' -- config.lua wird nicht unter Escrow-Schutz gestellt
 }
 
