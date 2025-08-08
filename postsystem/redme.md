@@ -6,14 +6,14 @@ Das **PostSystem** ist ein umfassendes Script für FiveM, das Spielern ermöglic
 
 ## ✉️ Funktionen
 
-- **Nachrichten senden** – Spieler können Nachrichten an andere Spieler versenden.  
-- **Express-Versand** – Schnellere Lieferung gegen zusätzliche Gebühren.  
-- **Briefmarken-System** – Zum Versenden von Nachrichten werden Briefmarken benötigt.  
-- **Postfach-Kapazität** – Begrenzte Anzahl speicherbarer Nachrichten.  
-- **Schließfächer** – Spieler können eigene Schließfächer kaufen und verwalten.  
-- **Antworten auf Nachrichten** – Spieler können direkt auf erhaltene Nachrichten antworten.  
-- **Poststationen** – Auf der Karte markierte Orte bieten Zugang zum Postsystem.  
-- **Benachrichtigungen** – Spieler erhalten Hinweise auf neue Nachrichten.  
+- **Nachrichten senden** – Spieler können Nachrichten an andere Spieler versenden.
+- **Express-Versand** – Schnellere Lieferung gegen zusätzliche Gebühren.
+- **Briefmarken-System** – Zum Versenden von Nachrichten werden Briefmarken benötigt.
+- **Postfach-Kapazität** – Begrenzte Anzahl speicherbarer Nachrichten.
+- **Schließfächer** – Spieler können eigene Schließfächer kaufen und verwalten.
+- **Antworten auf Nachrichten** – Spieler können direkt auf erhaltene Nachrichten antworten.
+- **Poststationen** – Auf der Karte markierte Orte bieten Zugang zum Postsystem.
+- **Benachrichtigungen** – Spieler erhalten Hinweise auf neue Nachrichten.
 
 ---
 
@@ -21,19 +21,33 @@ Das **PostSystem** ist ein umfassendes Script für FiveM, das Spielern ermöglic
 
 ### ✅ Voraussetzungen
 
-- **ESX** (getestet mit ESX 1.2 und neuer)  
-- **oxmysql** (für die Datenbankverbindung)  
+- **ESX** (getestet mit ESX 1.2 und neuer)
+- **oxmysql** (für die Datenbankverbindung)
 
 ### 📂 Schritte
 
-1. **Script herunterladen**  
-   - Lade das **PostSystem-Script** herunter und platziere es im `resources`-Ordner.  
-   - Benenne den Ordner in `postsystem` um.  
+1. **Script herunterladen**
+   - Lade das **PostSystem-Script** herunter und platziere es im `resources`-Ordner.
+   - Benenne den Ordner in `postsystem` um.
 
-2. **Datenbank einrichten**  
-   - Führe die folgende SQL-Datei aus, um die benötigten Tabellen zu erstellen:  
+2. **Datenbank einrichten**
+   - Das Skript enthält eine `sql.sql`-Datei, die beim Serverstart automatisch ausgeführt werden sollte, um die notwendigen Datenbank-Tabellen zu erstellen.
+   - Falls die automatische Einrichtung fehlschlägt, führe die folgenden SQL-Befehle manuell in deiner Datenbank aus:
 
    ```sql
+   CREATE TABLE IF NOT EXISTS `post_messages` (
+     `id` INT(11) NOT NULL AUTO_INCREMENT,
+     `sender_identifier` VARCHAR(60) DEFAULT NULL,
+     `sender_name` VARCHAR(255) NOT NULL,
+     `receiver_identifier` VARCHAR(60) NOT NULL,
+     `message` TEXT NOT NULL,
+     `express` BOOLEAN NOT NULL DEFAULT FALSE,
+     `station` VARCHAR(255) DEFAULT NULL,
+     `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
+     PRIMARY KEY (`id`)
+   );
+
    CREATE TABLE IF NOT EXISTS `user_lockers` (
        `id` INT AUTO_INCREMENT PRIMARY KEY,
        `identifier` VARCHAR(255) NOT NULL,
@@ -49,40 +63,40 @@ Das **PostSystem** ist ein umfassendes Script für FiveM, das Spielern ermöglic
    ('Supermarkt', 'stamp', 50);
    ```
 
-3. **Script starten**  
-   - Füge folgende Zeile in die `server.cfg` ein:  
+3. **Script starten**
+   - Füge folgende Zeile in die `server.cfg` ein:
      ```cfg
      ensure postsystem
      ```
 
-4. **Konfiguration anpassen**  
-   - Bearbeite die `config.lua`, um Poststationen, Schließfächer und Gebühren anzupassen.  
+4. **Konfiguration anpassen**
+   - Bearbeite die `config.lua`, um Poststationen, Schließfächer und Gebühren anzupassen.
 
 ---
 
 ## 🎮 Verwendung
 
-### 🎛️ Tastenbelegung  
-- **E** – Postsystem öffnen (bei einer Poststation).  
-- **F5** – Schließfach öffnen (bei einem Schließfach).  
-- **F6** – Schließfach kaufen (bei einer Poststation).  
+### 🎛️ Tastenbelegung
+- **E** – Postsystem öffnen (bei einer Poststation).
+- **F5** – Schließfach öffnen (bei einem Schließfach).
+- **F6** – Schließfach kaufen (bei einer Poststation).
 
-### 📩 Nachrichten senden  
-1. Gehe zu einer **Poststation**.  
-2. Drücke **E**, um das **Postsystem** zu öffnen.  
-3. Wähle eine **Poststation**, einen **Empfänger** und schreibe deine Nachricht.  
-4. Wähle **Express-Versand** (optional).  
-5. Sende die Nachricht.  
+### 📩 Nachrichten senden
+1. Gehe zu einer **Poststation**.
+2. Drücke **E**, um das **Postsystem** zu öffnen.
+3. Wähle eine **Poststation**, einen **Empfänger** und schreibe deine Nachricht.
+4. Wähle **Express-Versand** (optional).
+5. Sende die Nachricht.
 
-### 🔒 Schließfächer  
-1. Gehe zu einer **Poststation**.  
-2. Drücke **F6**, um ein **Schließfach zu kaufen**.  
-3. Gehe zu deinem **Schließfach** und drücke **F5**, um es zu öffnen.  
+### 🔒 Schließfächer
+1. Gehe zu einer **Poststation**.
+2. Drücke **F6**, um ein **Schließfach zu kaufen**.
+3. Gehe zu deinem **Schließfach** und drücke **F5**, um es zu öffnen.
 
-### 📨 Auf Nachrichten antworten  
-1. Öffne das **Postsystem**.  
-2. Wähle eine Nachricht aus deinem **Posteingang**.  
-3. Klicke auf **Antworten**, um eine **Antwort zu senden**.  
+### 📨 Auf Nachrichten antworten
+1. Öffne das **Postsystem**.
+2. Wähle eine Nachricht aus deinem **Posteingang**.
+3. Klicke auf **Antworten**, um eine **Antwort zu senden**.
 
 ---
 
@@ -116,40 +130,40 @@ Config.BlipSettings = {
 
 ### 📬 **Sonstige Einstellungen**
 ```lua
-Config.NotificationDuration = 5000 -- Benachrichtigungsdauer  
-Config.DeliveryFee = 100 -- Standardgebühr für den Versand  
-Config.ExpressMultiplier = 3 -- Expressversand kostet das Dreifache  
-Config.ExpressDeliveryTime = 5 -- Express-Mail Zustellung in Sekunden  
-Config.StandardDeliveryTime = 120 -- Standard-Mail Zustellung in Sekunden  
-Config.StampPrice = 50 -- Preis für eine Briefmarke  
-Config.StampItem = "stamp" -- Item-Name für Briefmarken  
-Config.MailboxCapacity = 20 -- Maximale Nachrichtenanzahl pro Spieler  
-Config.LockerCapacity = 10 -- Maximale Gegenstände pro Schließfach  
-Config.LockerCost = 500 -- Kosten für ein Schließfach  
+Config.NotificationDuration = 5000 -- Benachrichtigungsdauer
+Config.DeliveryFee = 100 -- Standardgebühr für den Versand
+Config.ExpressMultiplier = 3 -- Expressversand kostet das Dreifache
+Config.ExpressDeliveryTime = 5 -- Express-Mail Zustellung in Sekunden
+Config.StandardDeliveryTime = 120 -- Standard-Mail Zustellung in Sekunden
+Config.StampPrice = 50 -- Preis für eine Briefmarke
+Config.StampItem = "stamp" -- Item-Name für Briefmarken
+Config.MailboxCapacity = 20 -- Maximale Nachrichtenanzahl pro Spieler
+Config.LockerCapacity = 10 -- Maximale Gegenstände pro Schließfach
+Config.LockerCost = 500 -- Kosten für ein Schließfach
 ```
 
 ---
 
-## 🖼️ Briefmarken-Item einrichten  
+## 🖼️ Briefmarken-Item einrichten
 
-### 1️⃣ **Item-Bild (`stamp.png`) hinzufügen**  
-Falls du ein Inventar mit Bildern verwendest, füge `stamp.png` in das richtige Verzeichnis ein:  
+### 1️⃣ **Item-Bild (`stamp.png`) hinzufügen**
+Falls du ein Inventar mit Bildern verwendest, füge `stamp.png` in das richtige Verzeichnis ein:
 
-**Für `esx_inventoryhud`**:  
-- `html/img/items/`  
+**Für `esx_inventoryhud`**:
+- `html/img/items/`
 
-**Für `qs-inventory`**:  
-- `html/images/`  
+**Für `qs-inventory`**:
+- `html/images/`
 
-### 2️⃣ **Item in die Datenbank einfügen**  
-Führe diesen SQL-Befehl aus:  
+### 2️⃣ **Item in die Datenbank einfügen**
+Führe diesen SQL-Befehl aus:
 ```sql
 INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
 ('stamp', 'Briefmarke', 1, 0, 1);
 ```
 
-### 3️⃣ **Item in den Shop einfügen (optional)**  
-Falls Briefmarken im Supermarkt verkauft werden sollen, nutze diesen SQL-Befehl:  
+### 3️⃣ **Item in den Shop einfügen (optional)**
+Falls Briefmarken im Supermarkt verkauft werden sollen, nutze diesen SQL-Befehl:
 ```sql
 INSERT INTO `shops` (`store`, `item`, `price`) VALUES
 ('Supermarkt', 'stamp', 50);

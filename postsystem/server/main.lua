@@ -1,147 +1,139 @@
 ESX = exports["es_extended"]:getSharedObject()
 
-local mailData = {}
-local playerClothing = {} -- Tabelle zum Speichern der Kleidung
+local playerClothing = {} -- Tabelle zum Speichern der Kleidung für den Postboten-Job
 
 -- Mail senden
 RegisterNetEvent("postsystem:sendMail")
 AddEventHandler("postsystem:sendMail", function(data)
     local src = source
     local player = ESX.GetPlayerFromId(src)
-    if not player then 
+    if not player then
         print("❌ Fehler: Absender nicht gefunden!")
-        return 
+        return
     end
 
-    -- Debugging: Zeige die empfangenen Daten an
-    print("Daten beim Senden der Mail:", json.encode(data))
-
-    -- Überprüfe die Daten
     if not data or not data.station or not data.receiver or not data.message then
         print("❌ Fehler: Ungültige Nachrichtendaten erhalten!")
-        if data then
-            print("Daten:", json.encode(data))
-        else
-            print("Daten sind nil")
-        end
         return
     end
 
-    local targetId = tonumber(data.receiver)
-    if not targetId then
-        print("❌ Fehler: Ungültige Empfänger-ID!")
+    local targetPlayer = ESX.GetPlayerFromId(tonumber(data.receiver))
+    if not targetPlayer then
+        TriggerClientEvent('esx:showNotification', src, "❌ Empfänger nicht online.")
         return
     end
-
-    local receiver = ESX.GetPlayerFromId(targetId)
-    if not receiver then
-        print("❌ Fehler: Empfänger nicht gefunden! ID:", targetId)
-        return
-    end
+    local receiverIdentifier = targetPlayer.identifier
 
     -- Überprüfe, ob der Empfänger noch Platz im Postfach hat
-    if mailData[targetId] and #mailData[targetId] >= Config.MailboxCapacity then
-        TriggerClientEvent("esx:showNotification", src, "❌ Das Postfach des Empfängers ist voll!")
-        return
-    end
-
-    -- Überprüfe, ob der Spieler eine Briefmarke hat
-    local stampItem = player.getInventoryItem(Config.StampItem)
-    if stampItem.count < 1 then
-        TriggerClientEvent("esx:showNotification", src, "❌ Du benötigst eine Briefmarke, um diese Nachricht zu versenden!")
-        return
-    end
-
-    -- Entferne eine Briefmarke aus dem Inventar des Spielers
-    player.removeInventoryItem(Config.StampItem, 1)
-
-    -- Berechne die Versandkosten
-    local deliveryCost = Config.DeliveryFee
-    if data.express then
-        deliveryCost = deliveryCost * Config.ExpressMultiplier
-    end
-
-    -- Überprüfe, ob der Spieler genug Geld hat
-    if player.getMoney() < deliveryCost then
-        TriggerClientEvent("esx:showNotification", src, "❌ Du hast nicht genug Geld, um diese Nachricht zu versenden!")
-        return
-    end
-
-    -- Ziehe das Geld vom Konto des Spielers ab
-    player.removeMoney(deliveryCost)
-    TriggerClientEvent("esx:showNotification", src, ("💸 Versandkosten in Höhe von $%d wurden von deinem Konto abgebucht."):format(deliveryCost))
-
-    -- Erstelle die Mail
-    local mailId = os.time() .. math.random(1000, 9999)
-    local mailEntry = {
-        id = mailId,
-        sender = player.getName(),
-        message = data.message,
-        express = data.express or false,
-        station = data.station -- Speichere die Poststation, an die die Nachricht gesendet wurde
-    }
-
-    -- Bestimme die Lieferzeit
-    local deliveryTime = mailEntry.express and Config.ExpressDeliveryTime or Config.StandardDeliveryTime
-
-    -- Speichere die Mail erst nach der Lieferzeit
-    SetTimeout(deliveryTime * 1000, function()
-        if not mailData[targetId] then
-            mailData[targetId] = {}
+    MySQL.Async.fetchScalar('SELECT COUNT(id) FROM post_messages WHERE receiver_identifier = @receiver_identifier', {
+        ['@receiver_identifier'] = receiverIdentifier
+    }, function(count)
+        if count and count >= Config.MailboxCapacity then
+            TriggerClientEvent("esx:showNotification", src, "❌ Das Postfach des Empfängers ist voll!")
+            return
         end
-        table.insert(mailData[targetId], mailEntry)
 
-        -- Informiere den Empfänger
-        TriggerClientEvent("postsystem:notifyMail", targetId, mailEntry)
+        -- Überprüfe, ob der Spieler eine Briefmarke hat
+        local stampItem = player.getInventoryItem(Config.StampItem)
+        if stampItem.count < 1 then
+            TriggerClientEvent("esx:showNotification", src, "❌ Du benötigst eine Briefmarke, um diese Nachricht zu versenden!")
+            return
+        end
+
+        -- Berechne die Versandkosten
+        local deliveryCost = Config.DeliveryFee
+        if data.express then
+            deliveryCost = deliveryCost * Config.ExpressMultiplier
+        end
+
+        -- Überprüfe, ob der Spieler genug Geld hat
+        if player.getMoney() < deliveryCost then
+            TriggerClientEvent("esx:showNotification", src, "❌ Du hast nicht genug Geld, um diese Nachricht zu versenden!")
+            return
+        end
+
+        -- Ziehe das Geld und die Briefmarke vom Spieler ab
+        player.removeMoney(deliveryCost)
+        player.removeInventoryItem(Config.StampItem, 1)
+        TriggerClientEvent("esx:showNotification", src, ("💸 Versandkosten in Höhe von $%d wurden von deinem Konto abgebucht."):format(deliveryCost))
+
+        -- Bestimme die Lieferzeit
+        local deliveryTime = (data.express and Config.ExpressDeliveryTime or Config.StandardDeliveryTime) * 1000
+
+        -- Speichere die Mail erst nach der Lieferzeit
+        SetTimeout(deliveryTime, function()
+            MySQL.Async.execute(
+                'INSERT INTO post_messages (sender_identifier, sender_name, receiver_identifier, message, express, station) VALUES (@sender_identifier, @sender_name, @receiver_identifier, @message, @express, @station)',
+                {
+                    ['@sender_identifier'] = player.identifier,
+                    ['@sender_name'] = player.getName(),
+                    ['@receiver_identifier'] = receiverIdentifier,
+                    ['@message'] = data.message,
+                    ['@express'] = data.express or false,
+                    ['@station'] = data.station
+                },
+                function(affectedRows)
+                    if affectedRows > 0 then
+                        -- Informiere den Empfänger, wenn er online ist
+                        if targetPlayer then
+                            TriggerClientEvent("postsystem:notifyMail", targetPlayer.source, {
+                                sender = player.getName(),
+                                message = data.message
+                            })
+                            TriggerClientEvent('esx:showNotification', targetPlayer.source, '📬 Du hast neue Post erhalten!')
+                        end
+                        print(("📨 Nachricht von %s an %s in DB gespeichert (Express: %s)"):format(player.getName(), targetPlayer.getName(), data.express and "Ja" or "Nein"))
+                    else
+                        print("❌ Fehler: Nachricht konnte nicht in der Datenbank gespeichert werden.")
+                        -- Hier könnte man dem Spieler das Geld/Item zurückgeben
+                    end
+                end
+            )
+        end)
     end)
-
-    print(("📨 Nachricht von %s an %s gesendet (Express: %s, Lieferzeit: %d Sekunden, Kosten: $%d)"):format(
-        player.getName(), receiver.getName(), mailEntry.express and "Ja" or "Nein", deliveryTime, deliveryCost
-    ))
 end)
 
 -- Mail löschen
 RegisterNetEvent("postsystem:deleteMail")
 AddEventHandler("postsystem:deleteMail", function(mailId)
-    local playerId = source
+    local src = source
+    local player = ESX.GetPlayerFromId(src)
+    if not player then return end
+
     if not mailId then
         print("❌ Fehler: Keine Mail-ID angegeben!")
         return
     end
 
-    if not mailData[playerId] then
-        print("ℹ️ Keine Mails für Spieler %s gefunden", playerId)
-        return
-    end
-
-    for i, mail in ipairs(mailData[playerId]) do
-        if mail.id == mailId then
-            table.remove(mailData[playerId], i)
-            print(("🗑️ Nachricht %s von Spieler %s gelöscht"):format(mailId, playerId))
-            TriggerClientEvent("esx:showNotification", playerId, "🗑️ Nachricht gelöscht!")
-            return
+    MySQL.Async.execute(
+        'DELETE FROM post_messages WHERE id = @id AND receiver_identifier = @receiver_identifier',
+        {
+            ['@id'] = mailId,
+            ['@receiver_identifier'] = player.identifier
+        },
+        function(affectedRows)
+            if affectedRows > 0 then
+                TriggerClientEvent("esx:showNotification", src, "🗑️ Nachricht gelöscht!")
+            else
+                TriggerClientEvent("esx:showNotification", src, "❌ Fehler: Nachricht nicht gefunden!")
+            end
         end
-    end
-
-    print("❌ Fehler: Nachricht nicht gefunden!")
-    TriggerClientEvent("esx:showNotification", playerId, "❌ Fehler: Nachricht nicht gefunden!")
+    )
 end)
 
--- Gruppen-Nachricht senden
+-- Gruppen-Nachricht senden (bleibt unverändert, da es nur eine Benachrichtigung ist)
 RegisterNetEvent("postsystem:sendGroupMail")
 AddEventHandler("postsystem:sendGroupMail", function(data)
     local src = source
     local player = ESX.GetPlayerFromId(src)
     if not player then return end
 
-    -- Überprüfe, ob der Spieler Teil der Fraktion/Group ist
     local playerJob = player.getJob()
     if playerJob.name ~= data.faction then
         TriggerClientEvent("esx:showNotification", src, "❌ Du bist nicht Teil dieser Gruppe!")
         return
     end
 
-    -- Sende die Nachricht an alle Mitglieder der Fraktion/Group
     local players = ESX.GetPlayers()
     for _, targetId in ipairs(players) do
         local targetPlayer = ESX.GetPlayerFromId(targetId)
@@ -155,61 +147,56 @@ AddEventHandler("postsystem:sendGroupMail", function(data)
         end
     end
 
-    -- Benachrichtige den Absender
     TriggerClientEvent("esx:showNotification", src, "📨 Gruppen-Nachricht gesendet!")
 end)
 
 -- Callback: Mail abrufen
 ESX.RegisterServerCallback("postsystem:getMail", function(source, cb)
-    local playerId = source
-    local player = ESX.GetPlayerFromId(playerId)
+    local player = ESX.GetPlayerFromId(source)
     if not player then
         cb({})
         return
     end
 
-    -- Überprüfe, ob der Spieler in der Nähe der richtigen Poststation ist
-    local playerCoords = GetEntityCoords(GetPlayerPed(playerId))
-    local isNearCorrectStation = false
-    for _, station in ipairs(Config.PostStations) do
-        local stationCoords = vector3(station.x, station.y, station.z)
-        local distance = #(playerCoords - stationCoords)
-        if distance < 1.5 then
-            isNearCorrectStation = true
-            break
+    MySQL.Async.fetchAll(
+        'SELECT id, sender_name, message, express, station, timestamp FROM post_messages WHERE receiver_identifier = @identifier ORDER BY timestamp DESC',
+        {
+            ['@identifier'] = player.identifier
+        },
+        function(result)
+            local mails = {}
+            if result then
+                for i=1, #result, 1 do
+                    local mail = result[i]
+                    table.insert(mails, {
+                        id = mail.id,
+                        sender = mail.sender_name, -- Client erwartet 'sender'
+                        message = mail.message,
+                        express = mail.express,
+                        station = mail.station,
+                        timestamp = mail.timestamp
+                    })
+                end
+            end
+            cb(mails)
         end
-    end
-
-    if not isNearCorrectStation then
-        TriggerClientEvent("esx:showNotification", playerId, "❌ Du bist nicht in der Nähe der richtigen Poststation!")
-        cb({})
-        return
-    end
-
-    -- Gib die Mails des Spielers zurück
-    cb(mailData[playerId] or {})
+    )
 end)
 
 -- Callback: Poststationen abrufen
 ESX.RegisterServerCallback("postsystem:getStations", function(source, cb)
-    local stations = {
-        { name = "Paleto Post Office" },
-        { name = "Sandy Post Office" },
-        { name = "City Post Office" }
-    }
-    cb(stations)
+    cb(Config.PostStations)
 end)
 
 -- Callback: Spielerliste abrufen
 ESX.RegisterServerCallback("postsystem:getPlayers", function(source, cb)
     local players = {}
+    local plys = ESX.GetPlayers()
 
-    for _, player in pairs(ESX.GetPlayers()) do
-        local xPlayer = ESX.GetPlayerFromId(player)
+    for i=1, #plys, 1 do
+        local xPlayer = ESX.GetPlayerFromId(plys[i])
         if xPlayer then
-            table.insert(players, { id = player, name = xPlayer.getName() })
-        else
-            print("⚠️ Warnung: Spieler mit ID", player, "nicht gefunden.")
+            table.insert(players, { id = xPlayer.source, name = xPlayer.getName() })
         end
     end
 
@@ -218,11 +205,7 @@ end)
 
 -- Callback: Fraktionen/Gruppen abrufen
 ESX.RegisterServerCallback("postsystem:getFactions", function(source, cb)
-    -- Debugging: Zeige die Fraktionsdaten an
-    print("Fraktionsdaten werden gesendet:", json.encode(Config.Factions))
-    
-    -- Gib die Fraktionsdaten zurück
-    cb(Config.Factions)
+    cb(Config.Factions or {})
 end)
 
 -- Funktion zum Annehmen des Postboten-Jobs
@@ -232,16 +215,9 @@ AddEventHandler("postsystem:acceptPostmanJob", function()
     local player = ESX.GetPlayerFromId(src)
     if not player then return end
 
-    -- Speichere die aktuelle Kleidung des Spielers
     TriggerClientEvent("postsystem:saveCurrentClothing", src)
-
-    -- Setze den Job des Spielers auf Postbote
-    player.setJob(Config.PostmanJob.JobName, 0) -- 0 ist der Rang (z. B. Anfänger)
-
-    -- Uniform anziehen
+    player.setJob(Config.PostmanJob.JobName, 0)
     TriggerClientEvent("postsystem:setPostmanUniform", src)
-
-    -- Benachrichtigung
     TriggerClientEvent("esx:showNotification", src, "✅ Du bist jetzt ein Postbote!")
 end)
 
@@ -252,14 +228,9 @@ AddEventHandler("postsystem:quitPostmanJob", function()
     local player = ESX.GetPlayerFromId(src)
     if not player then return end
 
-    -- Setze den Job des Spielers zurück auf den Standard-Job
     player.setJob(Config.DefaultJob.JobName, Config.DefaultJob.Grade)
-
-    -- Normale Kleidung wiederherstellen
     TriggerClientEvent("postsystem:restoreNormalClothing", src)
-
-    -- Benachrichtigung
-    TriggerClientEvent("esx:showNotification", src, "🚪 Du hast den Postboten-Job beendet und deine normale Kleidung angezogen.")
+    TriggerClientEvent("esx:showNotification", src, "🚪 Du hast den Postboten-Job beendet.")
 end)
 
 -- Funktion zum Hinzufügen von Geld
