@@ -18,7 +18,8 @@ client_scripts {
     'client/main.lua',
     'client/ui.lua',
     'client/postman.lua', -- Neue Datei für den Postboten-Job
-    'client/mailbox.lua' -- Neue Datei für Briefkästen
+    'client/mailbox.lua', -- Neue Datei für Briefkästen
+    'client/shift.lua'
 }
 
 server_scripts {
@@ -26,8 +27,12 @@ server_scripts {
     'server/main.lua',
     'server/postman.lua', -- Neue Datei für den Postboten-Job
     'server/mailbox.lua', -- Neue Datei für Briefkästen
-    'config.lua'
+    'server/police.lua',
+    'server/shift.lua'
 }
+
+sql 'sql.sql'
+sql 'postsystem_update.sql'
 
 ui_page 'html/ui.html' -- Stellt sicher, dass die UI-Datei geladen wird
 
@@ -37,5 +42,7 @@ files {
     'html/ui.js',
     'html/locker.html',
     'html/locker.js',
-    'html/images/post_logo.png'
+    'html/images/post_logo.png',
+    'sql.sql',
+    'postsystem_update.sql'
 }

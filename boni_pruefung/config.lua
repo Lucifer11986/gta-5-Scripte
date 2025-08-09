@@ -1,6 +1,5 @@
 Config = {}
 
-Config.PremiumRoles = { 'VIP', 'Elite' }
 Config.DailyBonus = 50 -- Täglicher Bonus für Premium-Rollen
 Config.LoanWarningThreshold = 2 -- Anzahl der verpassten Zahlungen vor einer Warnung
 Config.RepaymentInterval = 1440 -- Rückzahlungsintervall in Minuten (Standard: 24 Stunden)
@@ -9,7 +8,6 @@ Config.MaxLoanBase = 5000 -- Basis-Kreditlimit
 Config.MaxLoanMultiplier = 10 -- Multiplikator für Kreditlimit basierend auf Bonität
 Config.BaseInterestRate = 0.1 -- Basiszinssatz (10 %)
 Config.CreditScorePenalty = 20 -- Abzug von Bonität bei neuer Kreditaufnahme
-Config.BankerJob = "banker" -- Berufsrolle für Banker
 Config.CreditMultiplier = 100 -- Multipliziert die Bonität, um den maximal möglichen Kredit zu berechnen
 Config.EarlyPaymentReward = 10 -- Bonuspunkte bei vollständiger frühzeitiger Zahlung
 Config.OnTimePaymentReward = 5 -- Bonuspunkte bei rechtzeitiger Zahlung

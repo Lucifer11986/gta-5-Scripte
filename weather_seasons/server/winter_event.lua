@@ -59,7 +59,7 @@ function StartWinterEvent()
 
     isWinterEventActive = true
     print("[Winter-Event] Es ist Winter! Das Geschenk-Event wird gestartet.")
-
+    
     local locations = getRandomPresentLocations(15)
     exports.oxmysql:executeSync("DELETE FROM winter_presents_locations", {})
     for _, pos in ipairs(locations) do
@@ -76,6 +76,7 @@ function StopWinterEvent()
     TriggerClientEvent("winter_event:removeAllPresents", -1)
 end
 
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Winter" then
         StartWinterEvent()
@@ -134,7 +135,7 @@ AddEventHandler("winter_event:findPresent", function(presentIndex)
 end)
 
 CreateThread(function()
-    exports.oxmysql:executeSync([[
+    exports.oxmysql:executeSync([[ 
         CREATE TABLE IF NOT EXISTS winter_presents_locations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             x FLOAT NOT NULL,

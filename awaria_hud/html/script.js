@@ -6,10 +6,10 @@ window.addEventListener('message', function(event) {
         const healthProgress = document.getElementById('health-progress');
         const healthValue = document.getElementById('health-value');
         const healthElement = document.getElementById('health');
-
+        
         healthProgress.style.backgroundImage = `conic-gradient(var(--health-color) ${data.health * 3.6}deg, transparent 0deg)`;
         healthValue.textContent = data.health;
-
+        
         if (data.health <= 25) {
             healthElement.classList.add('low-health');
         } else {
@@ -19,7 +19,7 @@ window.addEventListener('message', function(event) {
         // --- Update Armor ---
         const armorProgress = document.getElementById('armor-progress');
         const armorValue = document.getElementById('armor-value');
-
+        
         armorProgress.style.backgroundImage = `conic-gradient(var(--armor-color) ${data.armor * 3.6}deg, transparent 0deg)`;
         armorValue.textContent = data.armor;
 

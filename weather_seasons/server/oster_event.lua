@@ -59,6 +59,7 @@ function StopEasterEvent()
 end
 
 -- Event-Handler für die Saison-Änderung
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Frühling" then
         StartEasterEvent()
@@ -113,8 +114,11 @@ AddEventHandler("easter_event:findEgg", function(eggIndex)
         xPlayer.addAccountMoney("bank", amount)
         TriggerClientEvent("esx:showNotification", src, "🥚 Du hast ein Osterei gefunden! (+ $" .. amount .. " auf dein Konto)")
     elseif rewardChance <= 95 then
-        xPlayer.addInventoryItem("chocolate", 1)
-        TriggerClientEvent("esx:showNotification", src, "🍫 Du hast ein besonderes Osterei gefunden! (+1 Schokolade)")
+        local itemName = "chocolate"
+        local itemCount = 1
+        xPlayer.addInventoryItem(itemName, itemCount)
+        local itemLabel = ESX.GetItemLabel(itemName)
+        TriggerClientEvent("esx:showNotification", src, "🍫 Du hast ein besonderes Osterei gefunden! (+ " .. itemCount .. " " .. itemLabel .. ")")
     else
         xPlayer.addAccountMoney("bank", 5000)
         TriggerClientEvent("esx:showNotification", src, "🎉 Du hast ein Goldenes Ei gefunden! (+5000$ auf dein Konto)")

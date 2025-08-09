@@ -1,19 +1,18 @@
-# 📮 PostSystem für FiveM
+# 📮 Post & Paket System für FiveM
 
-Das **PostSystem** ist ein umfassendes Script für FiveM, das Spielern ermöglicht, Nachrichten zu senden, Schließfächer zu kaufen und zu verwalten sowie Briefmarken zu verwenden. Es fügt eine realistische Poststation-Mechanik in deinen Server ein und verbessert die Interaktion zwischen den Spielern.
+Ein umfassendes Script für FiveM, das ein interaktives Post- und Paketsystem zu deinem Server hinzufügt. Spieler können Briefe und Pakete versenden, einen Job als Postbote annehmen, eigene Briefkästen aufstellen und vieles mehr.
 
 ---
 
-## ✉️ Funktionen
+## 🌟 Features
 
-- **Nachrichten senden** – Spieler können Nachrichten an andere Spieler versenden.  
-- **Express-Versand** – Schnellere Lieferung gegen zusätzliche Gebühren.  
-- **Briefmarken-System** – Zum Versenden von Nachrichten werden Briefmarken benötigt.  
-- **Postfach-Kapazität** – Begrenzte Anzahl speicherbarer Nachrichten.  
-- **Schließfächer** – Spieler können eigene Schließfächer kaufen und verwalten.  
-- **Antworten auf Nachrichten** – Spieler können direkt auf erhaltene Nachrichten antworten.  
-- **Poststationen** – Auf der Karte markierte Orte bieten Zugang zum Postsystem.  
-- **Benachrichtigungen** – Spieler erhalten Hinweise auf neue Nachrichten.  
+- **Briefe & Pakete:** Sende Briefe oder Gegenstände an andere Spieler.
+- **Postboten-Job:** Ein vollwertiger Job mit einem Schichtsystem (Einstempeln/Ausstempeln).
+- **GPS-geführte Lieferrouten:** Postboten erhalten dynamische Routen zu den Briefkästen der Empfänger.
+- **Persistente Briefkästen:** Spieler können eigene Briefkästen kaufen und in der Welt platzieren.
+- **Polizei-Inspektion:** Polizisten können an Poststationen Pakete auf illegale Inhalte überprüfen und diese beschlagnahmen.
+- **Express-Versand:** Optionen für schnellere Lieferungen.
+- **Datenbank-Speicherung:** Alle Nachrichten, Pakete und Briefkästen werden persistent in der Datenbank gespeichert.
 
 ---
 
@@ -21,136 +20,52 @@ Das **PostSystem** ist ein umfassendes Script für FiveM, das Spielern ermöglic
 
 ### ✅ Voraussetzungen
 
-- **ESX** (getestet mit ESX 1.2 und neuer)  
-- **oxmysql** (für die Datenbankverbindung)  
+- **ESX** (getestet mit ESX Legacy)
+- **oxmysql** (für die Datenbankverbindung)
+- **esx_skin** & **skinchanger** (für das An- und Ausziehen der Uniform)
 
 ### 📂 Schritte
 
-1. **Script herunterladen**  
-   - Lade das **PostSystem-Script** herunter und platziere es im `resources`-Ordner.  
-   - Benenne den Ordner in `postsystem` um.  
-
-2. **Datenbank einrichten**  
-   - Führe die folgende SQL-Datei aus, um die benötigten Tabellen zu erstellen:  
-
-   ```sql
-   CREATE TABLE IF NOT EXISTS `user_lockers` (
-       `id` INT AUTO_INCREMENT PRIMARY KEY,
-       `identifier` VARCHAR(255) NOT NULL,
-       `locker_id` VARCHAR(255) NOT NULL,
-       `purchased` TINYINT(1) DEFAULT 0,
-       UNIQUE KEY `unique_combination` (`identifier`, `locker_id`)
-   );
-
-   INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
-   ('stamp', 'Briefmarke', 1, 0, 1);
-
-   INSERT INTO `shops` (`store`, `item`, `price`) VALUES
-   ('Supermarkt', 'stamp', 50);
-   ```
-
-3. **Script starten**  
-   - Füge folgende Zeile in die `server.cfg` ein:  
-     ```cfg
-     ensure postsystem
-     ```
-
-4. **Konfiguration anpassen**  
-   - Bearbeite die `config.lua`, um Poststationen, Schließfächer und Gebühren anzupassen.  
+1.  **Script herunterladen** und im `resources`-Ordner platzieren.
+2.  **Datenbank einrichten**: Die `sql.sql` und `postsystem_update.sql` werden beim Start des Scripts automatisch ausgeführt. Sie erstellen alle notwendigen Tabellen und fügen die neuen Items (`stamp`, `cardboard_box`, `mailbox_item`) hinzu.
+3.  **Items zu Shops hinzufügen**: Füge die neuen Items (`cardboard_box`, `mailbox_item`, `stamp`) zu deinen Shops hinzu, damit Spieler sie kaufen können. Beispiel:
+    ```sql
+    INSERT INTO `shops` (`store`, `item`, `price`) VALUES
+      ('LTDgasoline', 'stamp', 50),
+      ('LTDgasoline', 'cardboard_box', 100),
+      ('RobsLiquor', 'mailbox_item', 500);
+    ```
+4.  **Script starten**: Füge `ensure postsystem` in deine `server.cfg` ein.
+5.  **Konfiguration anpassen**: Bearbeite die `config.lua`, um das Script an deine Bedürfnisse anzupassen (z.B. Job-Einstellungen, Positionen, etc.).
 
 ---
 
-## 🎮 Verwendung
+## 🎮 Spieler-Anleitung
 
-### 🎛️ Tastenbelegung  
-- **E** – Postsystem öffnen (bei einer Poststation).  
-- **F5** – Schließfach öffnen (bei einem Schließfach).  
-- **F6** – Schließfach kaufen (bei einer Poststation).  
+### Briefe & Pakete versenden
+1.  Gehe zu einer Poststation (siehe Karte).
+2.  Drücke `[E]`, um das Menü zu öffnen.
+3.  **Briefe:** Wähle den "Brief Senden"-Tab, fülle die Felder aus und klicke auf "Versenden". Du benötigst eine `Briefmarke`.
+4.  **Pakete:** Wähle den "Paket Senden"-Tab. Du benötigst einen `Karton`. Wähle einen Gegenstand aus deinem Inventar und einen Empfänger.
 
-### 📩 Nachrichten senden  
-1. Gehe zu einer **Poststation**.  
-2. Drücke **E**, um das **Postsystem** zu öffnen.  
-3. Wähle eine **Poststation**, einen **Empfänger** und schreibe deine Nachricht.  
-4. Wähle **Express-Versand** (optional).  
-5. Sende die Nachricht.  
+### Eigenen Briefkasten aufstellen
+1.  Kaufe einen `Briefkasten` im Shop.
+2.  Benutze das Item aus deinem Inventar.
+3.  Bewege den Briefkasten an die gewünschte Position.
+4.  Benutze die `LINKS`/`RECHTS`-Pfeiltasten zum Drehen.
+5.  Drücke `[E]`, um den Briefkasten zu platzieren, oder `[G]` zum Abbrechen.
 
-### 🔒 Schließfächer  
-1. Gehe zu einer **Poststation**.  
-2. Drücke **F6**, um ein **Schließfach zu kaufen**.  
-3. Gehe zu deinem **Schließfach** und drücke **F5**, um es zu öffnen.  
+### Postbote werden (Schichtsystem)
+1.  Gehe zum Job-Center für Postboten (siehe `config.lua`).
+2.  Drücke `[E]`, um deine Schicht zu beginnen. Deine Kleidung wird automatisch zur Uniform gewechselt.
+3.  Gehe zu einer Poststation und drücke `[E]`, um das Menü zu öffnen.
+4.  Klicke auf `Lieferroute starten`. Du erhältst eine GPS-Route zur ersten Adresse.
+5.  Fahre zum markierten Briefkasten und drücke `[E]`, um das Paket zuzustellen. Du erhältst automatisch das nächste Ziel.
+6.  Um deine Schicht zu beenden, gehe zurück zum Job-Center und drücke erneut `[E]`.
 
-### 📨 Auf Nachrichten antworten  
-1. Öffne das **Postsystem**.  
-2. Wähle eine Nachricht aus deinem **Posteingang**.  
-3. Klicke auf **Antworten**, um eine **Antwort zu senden**.  
-
----
-
-## ⚙️ Konfiguration (`config.lua`)
-
-### 🏤 **Poststationen**
-```lua
-Config.PostStations = {
-    {x = -422.74, y = 6136.32, z = 30.87, heading = 229.28, name = "Paleto Post Office"},
-    {x = 1704.15, y = 3779.58, z = 33.75, heading = 208.11, name = "Sandy Post Office"},
-    {x = 380.51, y = -833.32, z = 28.29, heading = 176.35, name = "City Post Office"}
-}
-```
-
-### 🔐 **Schließfächer**
-```lua
-Config.Lockers = {
-    {id = "Schließfach Frachthafen", x = 1048.65, y = -2995.0, z = 5.9, name = "Schließfach 1"},
-    {id = "Schließfach Paleto", x = -406.64, y = 6150.92, z = 31.68, name = "Schließfach 2"}
-}
-```
-
-### 🗺️ **Blip-Einstellungen**
-```lua
-Config.BlipSettings = {
-    sprite = 280,
-    color = 2,
-    scale = 0.8
-}
-```
-
-### 📬 **Sonstige Einstellungen**
-```lua
-Config.NotificationDuration = 5000 -- Benachrichtigungsdauer  
-Config.DeliveryFee = 100 -- Standardgebühr für den Versand  
-Config.ExpressMultiplier = 3 -- Expressversand kostet das Dreifache  
-Config.ExpressDeliveryTime = 5 -- Express-Mail Zustellung in Sekunden  
-Config.StandardDeliveryTime = 120 -- Standard-Mail Zustellung in Sekunden  
-Config.StampPrice = 50 -- Preis für eine Briefmarke  
-Config.StampItem = "stamp" -- Item-Name für Briefmarken  
-Config.MailboxCapacity = 20 -- Maximale Nachrichtenanzahl pro Spieler  
-Config.LockerCapacity = 10 -- Maximale Gegenstände pro Schließfach  
-Config.LockerCost = 500 -- Kosten für ein Schließfach  
-```
-
----
-
-## 🖼️ Briefmarken-Item einrichten  
-
-### 1️⃣ **Item-Bild (`stamp.png`) hinzufügen**  
-Falls du ein Inventar mit Bildern verwendest, füge `stamp.png` in das richtige Verzeichnis ein:  
-
-**Für `esx_inventoryhud`**:  
-- `html/img/items/`  
-
-**Für `qs-inventory`**:  
-- `html/images/`  
-
-### 2️⃣ **Item in die Datenbank einfügen**  
-Führe diesen SQL-Befehl aus:  
-```sql
-INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
-('stamp', 'Briefmarke', 1, 0, 1);
-```
-
-### 3️⃣ **Item in den Shop einfügen (optional)**  
-Falls Briefmarken im Supermarkt verkauft werden sollen, nutze diesen SQL-Befehl:  
-```sql
-INSERT INTO `shops` (`store`, `item`, `price`) VALUES
-('Supermarkt', 'stamp', 50);
-```
+### Polizei-Inspektion
+1.  Gehe als Polizist (`job = 'police'`) zu einer Poststation.
+2.  Öffne das Menü mit `[E]`.
+3.  Wähle den "Polizei"-Tab.
+4.  Hier siehst du eine Liste aller wartenden Pakete.
+5.  Klicke auf `Beschlagnahmen`, um ein Paket zu entfernen und den Inhalt in dein Inventar zu legen.
