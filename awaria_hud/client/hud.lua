@@ -1,72 +1,74 @@
 local ESX = exports['es_extended']:getSharedObject()
-local temperature = 15 -- Standardwert setzen
 
--- Temperatur regelmäßig vom Server abrufen
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(10000) -- Temperatur nur alle 10 Sekunden abrufen (Performance-Optimierung)
-        ESX.TriggerServerCallback("weather:getTemperature", function(temp)
-            if temp then
-                temperature = temp -- Temperatur speichern, damit sie in der HUD-Schleife aktualisiert wird
-            end
-        end)
+-- Variablen, die von Events aktualisiert werden
+local hunger = 100
+local thirst = 100
+
+-- Event-Handler für ESX-Status (Hunger und Durst)
+RegisterNetEvent('esx_status:onTick')
+AddEventHandler('esx_status:onTick', function(status)
+    for i=1, #status, 1 do
+        if status[i].name == 'hunger' then
+            hunger = status[i].percent
+        elseif status[i].name == 'thirst' then
+            thirst = status[i].percent
+        end
     end
 end)
 
+-- Neuer Thread für das Fahrzeug-HUD
 Citizen.CreateThread(function()
+    local inVehicle = false
+    local wasInVehicle = false
+
     while true do
-        Citizen.Wait(500) -- Aktualisierung alle 500ms für flüssigere Werteänderung
+        Citizen.Wait(250) -- Check for vehicle status 4 times a second
 
         local playerPed = PlayerPedId()
-        local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100 -- Normalisiert auf 0-100
-        local armor = GetPedArmour(playerPed)
-        local hunger = exports["needs_script"]:GetHunger() or 100
-        local thirst = exports["needs_script"]:GetThirst() or 100
-        local energy = exports["needs_script"]:GetEnergy() or 100
-        local addiction = exports["drug_script"]:GetAddictionLevel() or 0
-        local needs = exports["needs_script"]:GetNeeds() or 100
+        local currentVehicle = GetVehiclePedIsIn(playerPed, false)
+        inVehicle = (currentVehicle ~= 0)
 
-        SendNUIMessage({
-            type = "update",
-            health = math.floor(health),
-            armor = armor,
-            hunger = hunger,
-            thirst = thirst,
-            energy = energy,
-            addiction = addiction,
-            needs = needs,
-            temperature = temperature -- Aktualisierte Temperatur wird hier verwendet
-        })
+        if inVehicle ~= wasInVehicle then
+            SendNUIMessage({ type = "showVehicle", show = inVehicle })
+            wasInVehicle = inVehicle
+        end
+
+        if inVehicle then
+            local speed = GetEntitySpeed(currentVehicle) * 3.6 -- Speed in km/h
+            local fuel = GetVehicleFuelLevel(currentVehicle)
+            local engineHealth = GetVehicleEngineHealth(currentVehicle) / 10 -- Convert from 0-1000 to 0-100 scale
+
+            SendNUIMessage({
+                type = "updateVehicle",
+                speed = math.floor(speed),
+                fuel = math.floor(fuel),
+                engineHealth = math.floor(engineHealth)
+            })
+        end
     end
 end)
 
-RegisterNetEvent("hud:updateValues")
-AddEventHandler("hud:updateValues", function()
-    local playerPed = PlayerPedId()
-    local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100
-    local armor = GetPedArmour(playerPed)
-    local hunger = exports["needs_script"]:GetHunger() or 100
-    local thirst = exports["needs_script"]:GetThirst() or 100
-    local energy = exports["needs_script"]:GetEnergy() or 100
-    local addiction = exports["drug_addiction"]:GetAddictionLevel() or 0
-    local needs = exports["needs_script"]:GetNeeds() or 100
+-- Haupt-Thread für die HUD-Aktualisierung
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500) -- Aktualisierungsintervall
 
-    SendNUIMessage({
-        type = "update",
-        health = math.floor(health),
-        armor = armor,
-        hunger = hunger,
-        thirst = thirst,
-        energy = energy,
-        addiction = addiction,
-        needs = needs,
-        temperature = temperature -- Aktualisierte Temperatur nutzen
-    })
-end)
+        local playerPed = PlayerPedId()
+        if playerPed and playerPed ~= -1 then
+            local health = GetEntityHealth(playerPed)
+            -- Gesundheit in GTA ist 100 (fast tot) bis 200 (voll). Wir mappen das auf 0-100.
+            local displayHealth = (health - 100)
+            if displayHealth < 0 then displayHealth = 0 end
 
-RegisterNUICallback('moveHUD', function()
-    SendNUIMessage({
-        type = "moveHUD",
-        position = { x = 0.02, y = 0.75 } -- Position höher über die Minimap gesetzt
-    })
+            local armor = GetPedArmour(playerPed)
+
+            SendNUIMessage({
+                type = "update",
+                health = math.floor(displayHealth),
+                armor = armor,
+                hunger = math.floor(hunger),
+                thirst = math.floor(thirst)
+            })
+        end
+    end
 end)
