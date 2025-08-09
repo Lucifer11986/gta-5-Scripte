@@ -13,7 +13,6 @@ local npcModel = "s_m_m_postal_01"
 function HasPlayerItem(itemName)
     local hasItem = false
     local playerData = ESX.GetPlayerData()
-
     if playerData and playerData.inventory then
         for i = 1, #playerData.inventory, 1 do
             if playerData.inventory[i].name == itemName and playerData.inventory[i].count > 0 then
@@ -29,10 +28,7 @@ end
 local function spawnNPCs()
     for _, station in ipairs(Config.PostStations) do
         RequestModel(npcModel)
-        while not HasModelLoaded(npcModel) do
-            Citizen.Wait(10)
-        end
-
+        while not HasModelLoaded(npcModel) do Citizen.Wait(10) end
         local npc = CreatePed(4, npcModel, station.x, station.y, station.z, station.heading, false, true)
         SetEntityHeading(npc, station.heading)
         FreezeEntityPosition(npc, true)
@@ -45,9 +41,7 @@ end
 local function isNearPostStation()
     local playerCoords = GetEntityCoords(PlayerPedId())
     for _, station in ipairs(Config.PostStations) do
-        local stationCoords = vector3(station.x, station.y, station.z)
-        local distance = #(playerCoords - stationCoords)
-        if distance < 1.5 then
+        if #(playerCoords - vector3(station.x, station.y, station.z)) < 2.0 then
             return true
         end
     end
@@ -88,6 +82,7 @@ end
 -- Funktion zur Registrierung von Events
 local function registerEvents()
     if eventsRegistered then return end
+    eventsRegistered = true
 
     RegisterNetEvent("postsystem:notifyMail")
     AddEventHandler("postsystem:notifyMail", function(mailEntry)
@@ -97,34 +92,21 @@ local function registerEvents()
     end)
 
     RegisterCommand("openMail", function()
-        if isUIOpen then return end
-        if not isNearPostStation() then
-            ESX.ShowNotification("❌ Du bist nicht in der Nähe einer Poststation!")
-            return
-        end
-
+        if isUIOpen or not isNearPostStation() then return end
         local playerData = ESX.GetPlayerData()
         local isPolice = playerData.job and playerData.job.name == 'police'
         local isPostman = playerData.job and playerData.job.name == Config.PostmanJob.JobName
         local playerHasBox = HasPlayerItem('cardboard_box')
-
         ESX.TriggerServerCallback("postsystem:getMail", function(receivedMessages)
             ESX.TriggerServerCallback("postsystem:getStations", function(stations)
                 ESX.TriggerServerCallback("postsystem:getPlayers", function(players)
                     ESX.TriggerServerCallback("postsystem:getFactions", function(factions)
                         ESX.TriggerServerCallback("postsystem:getInventory", function(inventory)
                             local dataToSend = {
-                                action = "openUI",
-                                isPolice = isPolice,
-                                isPostman = isPostman,
-                                stations = stations or {},
-                                players = players or {},
-                                factions = factions or {},
-                                receivedMessages = receivedMessages or {},
-                                inventory = inventory or {},
-                                hasBox = playerHasBox
+                                action = "openUI", isPolice = isPolice, isPostman = isPostman,
+                                stations = stations or {}, players = players or {}, factions = factions or {},
+                                receivedMessages = receivedMessages or {}, inventory = inventory or {}, hasBox = playerHasBox
                             }
-
                             if isPolice then
                                 ESX.TriggerServerCallback('postsystem:getPackagesForInspection', function(inspectionList)
                                     dataToSend.inspectionList = inspectionList or {}
@@ -144,65 +126,38 @@ local function registerEvents()
         end)
     end, false)
 
-    RegisterNUICallback("closeUI", function(data, cb)
-        SetNuiFocus(false, false)
-        isUIOpen = false
-        cb("ok")
-    end)
-
-    RegisterNUICallback("sendMail", function(data, cb)
-        TriggerServerEvent("postsystem:sendMail", data)
-        cb("ok")
-    end)
-
-    RegisterNUICallback("sendPackage", function(data, cb)
-        TriggerServerEvent("postsystem:sendPackage", data)
-        cb("ok")
-    end)
-
-    RegisterNUICallback("confiscatePackage", function(data, cb)
-        if data and data.id then
-            TriggerServerEvent('postsystem:confiscatePackage', data.id)
-            cb('ok')
-        else
-            cb('error')
-        end
-    end)
-
-    RegisterNUICallback("deleteMail", function(data, cb)
-        TriggerServerEvent("postsystem:deleteMail", data.id)
-        cb("ok")
-    end)
-
+    RegisterNUICallback("closeUI", function(data, cb) SetNuiFocus(false, false); isUIOpen = false; cb("ok") end)
+    RegisterNUICallback("sendMail", function(data, cb) TriggerServerEvent("postsystem:sendMail", data); cb("ok") end)
+    RegisterNUICallback("sendPackage", function(data, cb) TriggerServerEvent("postsystem:sendPackage", data); cb("ok") end)
+    RegisterNUICallback("confiscatePackage", function(data, cb) if data and data.id then TriggerServerEvent('postsystem:confiscatePackage', data.id) end; cb('ok') end)
+    RegisterNUICallback("deleteMail", function(data, cb) TriggerServerEvent("postsystem:deleteMail", data.id); cb("ok") end)
     RegisterKeyMapping("openMail", "Postsystem öffnen", "keyboard", "E")
-    eventsRegistered = true
 end
 
+-- Initialisierung
 CreateThread(function()
     createPostStationBlips()
     spawnNPCs()
+    registerEvents()
 end)
 
-registerEvents()
-
+-- Interaktions-Schleife
 CreateThread(function()
     while true do
-        Citizen.Wait(500)
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        local isNear = false
-
-        for _, station in ipairs(Config.PostStations) do
-            local stationCoords = vector3(station.x, station.y, station.z)
-            if #(playerCoords - stationCoords) < 2.0 then
-                isNear = true
-                break
-            end
-        end
-
-        if isNear then
-            drawText3D(GetEntityCoords(PlayerPedId()), "~g~Drücke ~w~[~b~E~w~], um die Poststation zu öffnen")
-            if IsControlJustReleased(0, 38) then
-                ExecuteCommand("openMail")
+        Citizen.Wait(0)
+        if not isUIOpen then
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local nearStation = false
+            for _, station in ipairs(Config.PostStations) do
+                local stationCoords = vector3(station.x, station.y, station.z)
+                if #(playerCoords - stationCoords) < 2.0 then
+                    nearStation = true
+                    drawText3D(stationCoords, "~g~Drücke [E]~w~, um die Poststation zu öffnen")
+                    if IsControlJustReleased(0, 38) then -- E
+                        ExecuteCommand("openMail")
+                    end
+                    break
+                end
             end
         end
     end

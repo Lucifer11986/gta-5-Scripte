@@ -1,5 +1,20 @@
 ESX = exports["es_extended"]:getSharedObject()
 
+-- Blip für Job-Annahmestelle erstellen
+CreateThread(function()
+    local jobLocation = Config.PostmanJob.JobLocation
+    local blip = AddBlipForCoord(jobLocation.x, jobLocation.y, jobLocation.z)
+
+    SetBlipSprite(blip, 408) -- Brief-Symbol
+    SetBlipColour(blip, 2) -- Grün
+    SetBlipScale(blip, 0.8)
+    SetBlipAsShortRange(blip, true)
+
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString("Postboten-Job")
+    EndTextCommandSetBlipName(blip)
+end)
+
 -- Interaktionspunkt für Schichtsystem
 CreateThread(function()
     while true do
