@@ -1,51 +1,63 @@
 ESX = exports["es_extended"]:getSharedObject()
 
+local warmClothesResponses = {}
+
+RegisterNetEvent('survival:responseWarmClothesStatus')
+AddEventHandler('survival:responseWarmClothesStatus', function(isWearingWarm)
+    local src = source
+    warmClothesResponses[src] = isWearingWarm
+end)
+
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(Config.Survival.CheckInterval * 1000)
         local currentTemperature = exports.weather_seasons:GetCurrentTemperature()
-
         local players = ESX.GetPlayers()
 
         for i = 1, #players do
-            local xPlayer = ESX.GetPlayerFromId(players[i])
-            if xPlayer then
-                -- Frage den Client einmal pro Schleife nach dem Kleidungsstatus
-                ESX.TriggerServerCallback('survival:isWearingWarmClothes', xPlayer.source, function(isWearingWarm)
+            local playerId = players[i]
+            warmClothesResponses[playerId] = nil
+            TriggerClientEvent('survival:requestWarmClothesStatus', playerId)
+        end
 
-                    -- Logik für Hitze
-                    if currentTemperature >= Config.Survival.HotTemperature then
-                        local multiplier = 1.0
-                        if isWearingWarm then
-                            multiplier = Config.Survival.ClothingMultiplier
-                        end
+        Citizen.Wait(500) -- kurze Wartezeit für Client-Antworten
 
-                        local thirst = xPlayer.get('thirst')
-                        xPlayer.set('thirst', thirst - (Config.Survival.ThirstRate * multiplier))
+        for i = 1, #players do
+            local playerId = players[i]
+            local xPlayer = ESX.GetPlayerFromId(playerId)
+            if not xPlayer then goto continue end
 
-                        if thirst <= 0 then
-                            local playerPed = GetPlayerPed(xPlayer.source)
-                            SetEntityHealth(playerPed, GetEntityHealth(playerPed) - Config.Survival.HeatDamage)
-                            TriggerClientEvent('esx:showNotification', xPlayer.source, 'Du leidest an einem Hitzschlag! Finde schnell Wasser!')
-                        end
+            local isWearingWarm = warmClothesResponses[playerId] or false
 
-                    -- Logik für Kälte
-                    elseif currentTemperature <= Config.Survival.ColdTemperature then
-                        if not isWearingWarm then
-                            local playerPed = GetPlayerPed(xPlayer.source)
-                            SetEntityHealth(playerPed, GetEntityHealth(playerPed) - Config.Survival.FreezingDamage)
-                            TriggerClientEvent('esx:showNotification', xPlayer.source, 'Dir ist eiskalt! Zieh dir etwas Warmes an!')
-                            TriggerClientEvent('survival:setFreezingEffect', xPlayer.source, true)
-                        else
-                            TriggerClientEvent('survival:setFreezingEffect', xPlayer.source, false)
-                        end
+            if currentTemperature >= Config.Survival.HotTemperature then
+                local multiplier = isWearingWarm and Config.Survival.ClothingMultiplier or 1.0
 
-                    -- Weder zu heiß noch zu kalt
-                    else
-                        TriggerClientEvent('survival:setFreezingEffect', xPlayer.source, false)
+                TriggerEvent('esx_status:getStatus', playerId, 'thirst', function(status)
+                    local thirst = status.getPercent()
+                    local newThirst = math.max(thirst - (Config.Survival.ThirstRate * multiplier), 0)
+                    status.set(newThirst)
+
+                    if newThirst <= 0 then
+                        -- Health-Änderung an Client senden statt hier direkt SetEntityHealth
+                        TriggerClientEvent('survival:applyHeatDamage', playerId, Config.Survival.HeatDamage)
+                        TriggerClientEvent('esx:showNotification', playerId, 'Du leidest an einem Hitzschlag! Finde schnell Wasser!')
                     end
                 end)
+
+            elseif currentTemperature <= Config.Survival.ColdTemperature then
+                if not isWearingWarm then
+                    -- Health-Änderung an Client senden
+                    TriggerClientEvent('survival:applyFreezingDamage', playerId, Config.Survival.FreezingDamage)
+                    TriggerClientEvent('esx:showNotification', playerId, 'Dir ist eiskalt! Zieh dir etwas Warmes an!')
+                    TriggerClientEvent('survival:setFreezingEffect', playerId, true)
+                else
+                    TriggerClientEvent('survival:setFreezingEffect', playerId, false)
+                end
+            else
+                TriggerClientEvent('survival:setFreezingEffect', playerId, false)
             end
+
+            ::continue::
         end
     end
 end)

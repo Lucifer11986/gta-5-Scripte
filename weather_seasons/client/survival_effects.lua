@@ -2,28 +2,26 @@ ESX = exports["es_extended"]:getSharedObject()
 
 local isFreezing = false
 
--- Diese Funktion überprüft, ob der Spieler warme Kleidung trägt.
 function isWearingWarmClothes()
     local playerPed = PlayerPedId()
-
-    -- Überprüfe die Jacke (Component ID 11)
     local jacketId = GetPedDrawableVariation(playerPed, 11)
     if Config.WarmClothing.jackets[jacketId] then
-        return true -- Spieler trägt eine warme Jacke
+        return true
     end
-
-    -- Hier könnten weitere Checks für Hosen etc. hinzugefügt werden
-
-    return false -- Spieler trägt keine ausreichend warme Kleidung
+    return false
 end
 
--- Registriere einen Client-Callback, damit der Server den Kleidungsstatus abfragen kann
 ESX.RegisterClientCallback('survival:isWearingWarmClothes', function(cb)
     local isWarm = isWearingWarmClothes()
     cb(isWarm)
 end)
 
--- Event, um den visuellen Frier-Effekt zu steuern
+RegisterNetEvent('survival:requestWarmClothesStatus')
+AddEventHandler('survival:requestWarmClothesStatus', function()
+    local isWarm = isWearingWarmClothes()
+    TriggerServerEvent('survival:responseWarmClothesStatus', isWarm)
+end)
+
 RegisterNetEvent('survival:setFreezingEffect')
 AddEventHandler('survival:setFreezingEffect', function(shouldBeFreezing)
     if shouldBeFreezing and not isFreezing then
@@ -36,13 +34,21 @@ AddEventHandler('survival:setFreezingEffect', function(shouldBeFreezing)
     end
 end)
 
--- Event für die große Benachrichtigung beim Jahreszeitenwechsel
-RegisterNetEvent('season:notifySeasonChange')
-AddEventHandler('season:notifySeasonChange', function(seasonName)
-    local title = "Die Jahreszeit hat gewechselt"
-    local message = "Willkommen im ~y~" .. seasonName .. "~s~!"
-    local icon = "CHAR_CALENDAR" -- Kalender-Icon
-    
-    -- Nutze eine große, zentrierte Benachrichtigung
-    ESX.ShowAdvancedNotification(title, "Wetter-Update", message, icon, 1)
+-- Neu: Health Schaden vom Server empfangen und setzen
+RegisterNetEvent('survival:applyHeatDamage')
+AddEventHandler('survival:applyHeatDamage', function(damage)
+    local playerPed = PlayerPedId()
+    local currentHealth = GetEntityHealth(playerPed)
+    local newHealth = currentHealth - damage
+    if newHealth < 0 then newHealth = 0 end
+    SetEntityHealth(playerPed, newHealth)
+end)
+
+RegisterNetEvent('survival:applyFreezingDamage')
+AddEventHandler('survival:applyFreezingDamage', function(damage)
+    local playerPed = PlayerPedId()
+    local currentHealth = GetEntityHealth(playerPed)
+    local newHealth = currentHealth - damage
+    if newHealth < 0 then newHealth = 0 end
+    SetEntityHealth(playerPed, newHealth)
 end)
