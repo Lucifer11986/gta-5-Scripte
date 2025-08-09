@@ -1,69 +1,42 @@
 local ESX = exports['es_extended']:getSharedObject()
 
--- Initialize local variables.
--- These will be updated by the esx_status:onTick event.
+-- Variablen, die von Events aktualisiert werden
 local hunger = 100
 local thirst = 100
-local temperature = 15 -- Default value
 
-function StartHudLogic()
-    -- Event handler for ESX status updates. This is the standard way to get needs values.
-    RegisterNetEvent('esx_status:onTick')
-    AddEventHandler('esx_status:onTick', function(status)
-        for i=1, #status, 1 do
-            if status[i].name == 'hunger' then
-                hunger = status[i].percent
-            elseif status[i].name == 'thirst' then
-                thirst = status[i].percent
-            end
+-- Event-Handler für ESX-Status (Hunger und Durst)
+RegisterNetEvent('esx_status:onTick')
+AddEventHandler('esx_status:onTick', function(status)
+    for i=1, #status, 1 do
+        if status[i].name == 'hunger' then
+            hunger = status[i].percent
+        elseif status[i].name == 'thirst' then
+            thirst = status[i].percent
         end
-    end)
+    end
+end)
 
-    -- Thread for fetching temperature (still configurable)
-    Citizen.CreateThread(function()
-        while true do
-            Citizen.Wait(10000) -- Update every 10 seconds
+-- Haupt-Thread für die HUD-Aktualisierung
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500) -- Aktualisierungsintervall
 
-            if Config.WeatherResourceName and exports[Config.WeatherResourceName] and exports[Config.WeatherResourceName].GetTemperature then
-                local tempValue = exports[Config.WeatherResourceName]:GetTemperature()
-                if tempValue then
-                    temperature = tempValue
-                end
-            end
-        end
-    end)
+        local playerPed = PlayerPedId()
+        if playerPed and playerPed ~= -1 then
+            local health = GetEntityHealth(playerPed)
+            -- Gesundheit in GTA ist 100 (fast tot) bis 200 (voll). Wir mappen das auf 0-100.
+            local displayHealth = (health - 100)
+            if displayHealth < 0 then displayHealth = 0 end
 
-    -- Main HUD update thread
-    Citizen.CreateThread(function()
-        while true do
-            Citizen.Wait(500) -- NUI update interval
-
-            local playerPed = PlayerPedId()
-            local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100
             local armor = GetPedArmour(playerPed)
-
-            local addiction = 0
-            if Config.AddictionResourceName and exports[Config.AddictionResourceName] and exports[Config.AddictionResourceName].GetAddictionLevel then
-                addiction = exports[Config.AddictionResourceName]:GetAddictionLevel() or 0
-            end
 
             SendNUIMessage({
                 type = "update",
-                health = math.floor(health),
+                health = math.floor(displayHealth),
                 armor = armor,
                 hunger = math.floor(hunger),
-                thirst = math.floor(thirst),
-                addiction = addiction,
-                temperature = temperature
+                thirst = math.floor(thirst)
             })
         end
-    end)
-end
-
--- This initial thread waits until the Config is loaded before starting the main logic.
-Citizen.CreateThread(function()
-    while Config == nil do
-        Citizen.Wait(500)
     end
-    StartHudLogic()
 end)

@@ -1,3 +1,1 @@
--- Server-seitige Logik wird für dieses HUD nicht mehr benötigt.
--- Alle Funktionen, inklusive des Bedürfnis-Systems, werden nun auf der Client-Seite
--- basierend auf der `config.lua` gesteuert.
+-- Für diese vereinfachte HUD-Variante wird keine serverseitige Logik benötigt.
