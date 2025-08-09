@@ -1,9 +1,20 @@
 ESX = exports["es_extended"]:getSharedObject()
 
+-- Lade die Config-Datei
+local configContent = LoadResourceFile(GetCurrentResourceName(), "config.lua")
+if configContent then
+    local env = {}
+    local func, err = load(configContent, "config.lua", "t", env)
+    if func then
+        local success, loadErr = pcall(func)
+        if success then
+            Config = env.Config
+        end
+    end
+end
+
 local currentSeasonIndex = 1
--- Setze die Starttemperatur basierend auf der ersten Jahreszeit in der Config
-local initialSeasonData = Config.Seasons[currentSeasonIndex]
-local currentTemperature = math.random(initialSeasonData.min_temp, initialSeasonData.max_temp)
+local currentTemperature = Config.Seasons[currentSeasonIndex].temperature
 local currentWeather = "Clear" -- Standardwert für das Wetter
 
 function GetCurrentSeason()
@@ -52,9 +63,8 @@ local function ChangeSeason()
         currentSeasonIndex = 1
     end
 
-    local seasonData = Config.Seasons[currentSeasonIndex]
-    currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
-    local seasonName = seasonData.name
+    currentTemperature = Config.Seasons[currentSeasonIndex].temperature
+    local seasonName = Config.Seasons[currentSeasonIndex].name
 
     TriggerClientEvent("season:updateSeason", -1, seasonName, currentTemperature)
     TriggerClientEvent("season:notifySeasonChange", -1, seasonName)
@@ -103,9 +113,3 @@ end
 ESX.RegisterServerCallback("weather:getTemperature", function(source, cb)
     cb(GetCurrentTemperature())
 end)
-
--- Exporte für andere Skripte innerhalb der Ressource
-exports("GetCurrentSeason", GetCurrentSeason)
-exports("GetCurrentTemperature", GetCurrentTemperature)
-exports("GetCurrentWeather", GetCurrentWeather)
-exports("IsHeatwaveActive", IsHeatwaveActive)
