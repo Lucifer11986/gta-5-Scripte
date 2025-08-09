@@ -1,38 +1,42 @@
 local ESX = exports['es_extended']:getSharedObject()
 
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(500) -- Aktualisierung alle 500ms für flüssigere Werteänderung
+-- Variablen, die von Events aktualisiert werden
+local hunger = 100
+local thirst = 100
 
-        local playerPed = PlayerPedId()
-        local health = (GetEntityHealth(playerPed) - 100) / (GetEntityMaxHealth(playerPed) - 100) * 100 -- Normalisiert auf 0-100
-        local armor = GetPedArmour(playerPed)
-
-        -- HINWEIS: Die folgenden Exporte hängen von den Skripten ab, die du auf deinem Server verwendest.
-        -- Passe die Namen ("needs_script", "drug_script") entsprechend an.
-        local hunger = exports["needs_script"]:GetHunger() or 100
-        local thirst = exports["needs_script"]:GetThirst() or 100
-        local energy = exports["needs_script"]:GetEnergy() or 100
-        -- Der Sucht-Wert wurde auf "drug_script" vereinheitlicht. Passe dies bei Bedarf an.
-        local addiction = exports["drug_script"]:GetAddictionLevel() or 0
-        local needs = exports["needs_script"]:GetNeeds() or 100
-
-        SendNUIMessage({
-            type = "update",
-            health = math.floor(health),
-            armor = armor,
-            hunger = hunger,
-            thirst = thirst,
-            energy = energy,
-            addiction = addiction,
-            needs = needs
-        })
+-- Event-Handler für ESX-Status (Hunger und Durst)
+RegisterNetEvent('esx_status:onTick')
+AddEventHandler('esx_status:onTick', function(status)
+    for i=1, #status, 1 do
+        if status[i].name == 'hunger' then
+            hunger = status[i].percent
+        elseif status[i].name == 'thirst' then
+            thirst = status[i].percent
+        end
     end
 end)
 
-RegisterNUICallback('moveHUD', function()
-    SendNUIMessage({
-        type = "moveHUD",
-        position = { x = 0.02, y = 0.75 } -- Position höher über die Minimap gesetzt
-    })
+-- Haupt-Thread für die HUD-Aktualisierung
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(500) -- Aktualisierungsintervall
+
+        local playerPed = PlayerPedId()
+        if playerPed and playerPed ~= -1 then
+            local health = GetEntityHealth(playerPed)
+            -- Gesundheit in GTA ist 100 (fast tot) bis 200 (voll). Wir mappen das auf 0-100.
+            local displayHealth = (health - 100)
+            if displayHealth < 0 then displayHealth = 0 end
+
+            local armor = GetPedArmour(playerPed)
+            
+            SendNUIMessage({
+                type = "update",
+                health = math.floor(displayHealth),
+                armor = armor,
+                hunger = math.floor(hunger),
+                thirst = math.floor(thirst)
+            })
+        end
+    end
 end)
