@@ -1,101 +1,159 @@
-local Framework = nil
-local PlayerData = {}
+ESX = exports["es_extended"]:getSharedObject()
 
-Citizen.CreateThread(function()
-    while Framework == nil do
-        if GetResourceState('es_extended') == 'started' then
-            Framework = exports['es_extended']:getSharedObject()
-        elseif GetResourceState('qb-core') == 'started' then
-            Framework = exports['qb-core']:GetCoreObject()
-        elseif GetResourceState('esy') == 'started' then
-            Framework = exports['esy']:getSharedObject()
+local currentSeasonIndex = 1
+local currentTemperature = 15
+
+local seasonTemperatures = {
+    ["Frühling"] = { min = 8, max = 18 },
+    ["Sommer"] = { min = 20, max = 35 },
+    ["Herbst"] = { min = 10, max = 20 },
+    ["Winter"] = { min = -5, max = 5 }
+}
+
+-- **API, um die aktuelle Jahreszeit abzurufen**
+RegisterNetEvent("season:getSeasonInfo")
+AddEventHandler("season:getSeasonInfo", function(source)
+    TriggerClientEvent("season:returnSeasonInfo", source, GetCurrentSeason(), GetCurrentTemperature())
+end)
+
+-- **API, um die Temperatur zu überprüfen**
+RegisterNetEvent("season:getTemperature")
+AddEventHandler("season:getTemperature", function(source)
+    TriggerClientEvent("season:returnTemperature", source, GetCurrentTemperature())
+end)
+
+-- **API, um die Jahreszeit zu ändern**
+RegisterNetEvent("season:setSeason")
+AddEventHandler("season:setSeason", function(seasonName)
+    if seasonTemperatures[seasonName] then
+        local tempRange = seasonTemperatures[seasonName]
+        currentTemperature = math.random(tempRange.min, tempRange.max)
+        currentSeasonIndex = GetSeasonIndex(seasonName)
+        SaveSeasonAndTemperature(seasonName, currentTemperature)
+        TriggerClientEvent("season_events:updateSeason", -1, seasonName, currentTemperature)
+    else
+        print("Ungültige Jahreszeit.")
+    end
+end)
+
+function GetCurrentSeason()
+    local seasons = {"Frühling", "Sommer", "Herbst", "Winter"}
+    return seasons[currentSeasonIndex]
+end
+
+function GetCurrentTemperature()
+    return currentTemperature
+end
+
+function UpdateTemperature(season)
+    if seasonTemperatures[season] then
+        local tempRange = seasonTemperatures[season]
+        currentTemperature = math.random(tempRange.min, tempRange.max)
+    end
+end
+
+function GetSeasonIndex(season)
+    local seasons = {"Frühling", "Sommer", "Herbst", "Winter"}
+    for i, s in ipairs(seasons) do
+        if s == season then
+            return i
         end
-        Citizen.Wait(500)
+    end
+    return 1
+end
+
+function SaveSeasonAndTemperature(season, temperature)
+    local query = "INSERT INTO server_settings (current_season, current_temperature) VALUES (?, ?)"
+    MySQL.Async.execute(query, {season, temperature})
+end
+
+function LoadSeasonAndTemperature()
+    MySQL.Async.fetchAll("SELECT current_season, current_temperature FROM server_settings ORDER BY id DESC LIMIT 1", {}, function(result)
+        if result[1] then
+            local savedSeason = result[1].current_season
+            local savedTemperature = result[1].current_temperature
+
+            currentSeasonIndex = GetSeasonIndex(savedSeason)
+            currentTemperature = savedTemperature
+
+            TriggerClientEvent("season_events:updateSeason", -1, savedSeason, savedTemperature)
+        else
+            -- Falls keine gespeicherten Werte existieren, setze die Jahreszeit auf Frühling
+            currentSeasonIndex = 1
+            currentTemperature = math.random(seasonTemperatures["Frühling"].min, seasonTemperatures["Frühling"].max)
+            SaveSeasonAndTemperature("Frühling", currentTemperature)
+            TriggerClientEvent("season_events:updateSeason", -1, "Frühling", currentTemperature)
+        end
+    end)
+end
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        LoadSeasonAndTemperature()
+    end
+end)
+
+-- **Berechnung der Jahreszeit basierend auf dem aktuellen Datum**
+function GetSeasonFromDate()
+    local currentMonth = GetCurrentMonth()  -- Monat (1 bis 12)
+    if currentMonth >= 3 and currentMonth <= 5 then
+        return "Frühling"
+    elseif currentMonth >= 6 and currentMonth <= 8 then
+        return "Sommer"
+    elseif currentMonth >= 9 and currentMonth <= 11 then
+        return "Herbst"
+    else
+        return "Winter"
+    end
+end
+
+-- Funktion, die den aktuellen Monat zurückgibt
+function GetCurrentMonth()
+    return tonumber(os.date("%m"))
+end
+
+-- **Berechnung der Temperatur basierend auf der Jahreszeit**
+function UpdateSeasonAndTemperatureBasedOnDate()
+    local currentSeason = GetSeasonFromDate()
+    currentSeasonIndex = GetSeasonIndex(currentSeason)
+    UpdateTemperature(currentSeason)
+    SaveSeasonAndTemperature(currentSeason, currentTemperature)
+    TriggerClientEvent("season_events:updateSeason", -1, currentSeason, currentTemperature)
+end
+
+-- Update der Jahreszeit und Temperatur alle 30 Minuten
+CreateThread(function()
+    while true do
+        Wait(1800000)  -- 30 Minuten
+        UpdateSeasonAndTemperatureBasedOnDate()
+    end
+end)
+
+function IsHeatwaveActive()
+    return currentTemperature and currentTemperature >= Config.HeatwaveTemperature
+end
+
+function IsPlayerAdmin(source)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    return xPlayer and xPlayer.getGroup() == "admin"
+end
+
+RegisterCommand("setseason", function(source, args)
+    if not IsPlayerAdmin(source) then
+        TriggerClientEvent('chat:addMessage', source, { args = { "[SEASON]", "❌ Du hast keine Berechtigung, die Jahreszeit zu ändern!" } })
+        return
     end
 
-    if Framework then
-        if Framework.PlayerLoaded then
-            PlayerData = Framework.GetPlayerData()
-        elseif Framework.Functions and Framework.Functions.GetPlayerData then
-            PlayerData = Framework.Functions.GetPlayerData()
+    if args[1] then
+        local newSeason = args[1]:gsub("^%s*(.-)%s*$", "%1")  -- Trimmen der Leerzeichen
+        if GetSeasonIndex(newSeason) then
+            currentSeasonIndex = GetSeasonIndex(newSeason)
+            UpdateTemperature(newSeason)
+            SaveSeasonAndTemperature(newSeason, currentTemperature)
+            TriggerClientEvent("season_events:updateSeason", -1, newSeason, currentTemperature)
+            TriggerClientEvent('chat:addMessage', source, { args = { "[SEASON]", "✅ Jahreszeit auf " .. newSeason .. " gesetzt!" } })
+        else
+            TriggerClientEvent('chat:addMessage', source, { args = { "[SEASON]", "❌ Ungültige Jahreszeit." } })
         end
     end
-end)
-
--- Sommer-Aktivitäten (z.B. JetSki-Rennen)
-RegisterNetEvent("sommer:startJetSkiRace")
-AddEventHandler("sommer:startJetSkiRace", function()
-    local playerPed = PlayerPedId()
-    local jetSkiModel = GetHashKey("seashark")
-    RequestModel(jetSkiModel)
-
-    while not HasModelLoaded(jetSkiModel) do
-        Citizen.Wait(100)
-    end
-
-    local spawnCoords = vector3(-1600.0, -1200.0, 0.0) -- Beispiel-Spawnpunkt
-    local vehicle = CreateVehicle(jetSkiModel, spawnCoords.x, spawnCoords.y, spawnCoords.z, 0.0, true, false)
-    TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
-
-    TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Viel Spaß beim JetSki-Rennen!" } })
-end)
-
--- Wasser-Battle (Minispiel)
-local waterBattleActive = false
-
-RegisterNetEvent("sommer:startWaterBattle")
-AddEventHandler("sommer:startWaterBattle", function()
-    if not waterBattleActive then
-        waterBattleActive = true
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Wasser-Battle startet! Schnapp dir deine Wasserpistole!" } })
-        Citizen.SetTimeout(60000, function() -- Wasser-Battle dauert 1 Minute
-            waterBattleActive = false
-            TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Das Wasser-Battle ist vorbei!" } })
-        end)
-    else
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Das Wasser-Battle läuft bereits!" } })
-    end
-end)
-
-RegisterNetEvent("sommer:shootWater")
-AddEventHandler("sommer:shootWater", function(targetPed)
-    if waterBattleActive then
-        local playerPed = PlayerPedId()
-        local targetPed = GetPlayerPed(-1) -- Hier müsste der tatsächliche Zielspieler übergeben werden
-        -- Hier könntest du eine Animation oder Effekt für den Wasserschuss hinzufügen
-        TriggerServerEvent("sommer:applyWaterDamage", targetPed) -- Server-sseitige Berechnung des Wasserschaden
-    end
-end)
-
--- Ernte-Wettbewerb
-local harvestCompetitionActive = false
-
-RegisterNetEvent("sommer:startHarvestCompetition")
-AddEventHandler("sommer:startHarvestCompetition", function()
-    if not harvestCompetitionActive then
-        harvestCompetitionActive = true
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Der Ernte-Wettbewerb hat begonnen! Wer wird der Schnellste sein?" } })
-        Citizen.SetTimeout(60000, function() -- Wettbewerb dauert 1 Minute
-            harvestCompetitionActive = false
-            TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Der Ernte-Wettbewerb ist vorbei!" } })
-        end)
-    else
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Der Ernte-Wettbewerb läuft bereits!" } })
-    end
-end)
-
-RegisterNetEvent("sommer:harvestCrop")
-AddEventHandler("sommer:harvestCrop", function()
-    if harvestCompetitionActive then
-        -- Ernte-Logik, z.B. das Ernten von Pflanzen
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Du hast eine Pflanze geerntet!" } })
-    else
-        TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Der Wettbewerb ist nicht aktiv!" } })
-    end
-end)
-
--- Sommerbelohnung sammeln
-RegisterNetEvent("sommer:collectReward")
-AddEventHandler("sommer:collectReward", function()
-    TriggerServerEvent("sommer:giveReward")
-end)
+end, false)
