@@ -1,4 +1,4 @@
-fx_version 'cerulean'
+x_version 'cerulean'
 game 'gta5'
 
 author 'Lucifer | Awaria Modding - Edited by Jules'

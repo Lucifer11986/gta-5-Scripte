@@ -42,7 +42,7 @@ AddEventHandler('season:notifySeasonChange', function(seasonName)
     local title = "Die Jahreszeit hat gewechselt"
     local message = "Willkommen im ~y~" .. seasonName .. "~s~!"
     local icon = "CHAR_CALENDAR" -- Kalender-Icon
-
+    
     -- Nutze eine große, zentrierte Benachrichtigung
     ESX.ShowAdvancedNotification(title, "Wetter-Update", message, icon, 1)
 end)
@@ -52,7 +52,7 @@ RegisterCommand('myclothes', function()
     local playerPed = PlayerPedId()
     print("--- Aktuelle Kleidung ---")
     -- Component IDs: 3 = Arme, 4 = Hosen, 8 = T-Shirt, 11 = Jacke/Torso
-    local components = {3, 4, 8, 11}
+    local components = {3, 4, 8, 11} 
     for _, componentId in ipairs(components) do
         local drawableId = GetPedDrawableVariation(playerPed, componentId)
         local textureId = GetPedTextureVariation(playerPed, componentId)

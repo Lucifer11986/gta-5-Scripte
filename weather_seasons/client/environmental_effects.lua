@@ -40,7 +40,7 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(1000) -- Jede Sekunde prüfen
         local playerPed = PlayerPedId()
-
+        
         if IsPedInAnyVehicle(playerPed, false) then
             local vehicle = GetVehiclePedIsIn(playerPed, false)
             if currentSeason == "Winter" and currentTemperature < 0 then

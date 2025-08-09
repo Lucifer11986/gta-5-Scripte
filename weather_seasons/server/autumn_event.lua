@@ -3,7 +3,7 @@ ESX = exports["es_extended"]:getSharedObject()
 math.randomseed(os.time())
 
 local isAutumnEventActive = false
-local pumpkinModels = { "prop_pumpkin_01" } -- Placeholder model, user needs to provide actual models
+local pumpkinModels = { "prop_pumpkin_01" } -- Placeholder model, you need to provide actual models
 local foundPumpkins = {}
 
 -- Helper function to get a random reward based on rarity
@@ -45,7 +45,7 @@ end
 
 function StartAutumnEvent()
     if isAutumnEventActive or not Config.AutumnEvent.Enabled then return end
-
+    
     -- Check if the event has run for its duration
     local result = exports.oxmysql:executeSync("SELECT event_start_time FROM event_timers WHERE event_name = 'autumn'", {})
     local startTime = result and result[1] and result[1].event_start_time
@@ -63,7 +63,7 @@ function StartAutumnEvent()
 
     isAutumnEventActive = true
     print("[Herbst-Event] Es ist Herbst! Das Kürbis-Event wird gestartet.")
-
+    
     local locations = getRandomPumpkinLocations(15) -- Spawn 15 pumpkins
     exports.oxmysql:executeSync("DELETE FROM autumn_pumpkins_locations", {})
     for _, pos in ipairs(locations) do
@@ -140,7 +140,7 @@ AddEventHandler("autumn_event:findPumpkin", function(pumpkinIndex)
 end)
 
 CreateThread(function()
-    exports.oxmysql:executeSync([[
+    exports.oxmysql:executeSync([[ 
         CREATE TABLE IF NOT EXISTS autumn_pumpkins_locations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             x FLOAT NOT NULL,

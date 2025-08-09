@@ -12,14 +12,14 @@ Citizen.CreateThread(function()
             if xPlayer then
                 -- Frage den Client einmal pro Schleife nach dem Kleidungsstatus
                 ESX.TriggerServerCallback('survival:isWearingWarmClothes', xPlayer.source, function(isWearingWarm)
-
+                    
                     -- Logik für Hitze
                     if currentTemperature >= Config.Survival.HotTemperature then
                         local multiplier = 1.0
                         if isWearingWarm then
                             multiplier = Config.Survival.ClothingMultiplier
                         end
-
+                        
                         local thirst = xPlayer.get('thirst')
                         xPlayer.set('thirst', thirst - (Config.Survival.ThirstRate * multiplier))
 
@@ -39,7 +39,7 @@ Citizen.CreateThread(function()
                         else
                             TriggerClientEvent('survival:setFreezingEffect', xPlayer.source, false)
                         end
-
+                    
                     -- Weder zu heiß noch zu kalt
                     else
                         TriggerClientEvent('survival:setFreezingEffect', xPlayer.source, false)
