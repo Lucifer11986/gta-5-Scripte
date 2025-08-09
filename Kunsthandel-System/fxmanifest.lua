@@ -12,8 +12,10 @@ version '2.1.0'
 shared_script '@es_extended/imports.lua' -- Für ESX
 shared_script '@qb-core/import.lua' -- Für QB-Core
 
+shared_script 'config.lua'
+shared_script 'shared/utils.lua'
+
 server_scripts {
-    'server/server.lua',
     'server/art_trade.lua'
 }
 
