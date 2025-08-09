@@ -148,115 +148,61 @@ Config.SummerNightWeather = {"CLEAR", "FOGGY"}
 
 -- 🌡️ Überlebens-Mechaniken
 Config.Survival = {
-    CheckInterval = 30, -- Intervall in Sekunden, in dem der Überlebensstatus geprüft wird
-    HotTemperature = 28, -- Temperatur, ab der der Durst bei Hitze sinkt
-    ThirstRate = 2, -- Wie viel Durst pro Intervall bei Hitze abgezogen wird (von 100)
-    HeatDamage = 5, -- Wie viel Leben pro Intervall bei einem Hitzschlag verloren geht
-    ClothingMultiplier = 1.5, -- Faktor, um den der Durst bei warmer Kleidung schneller sinkt
-
-    -- NEU: Kälte-Mechanik
-    ColdTemperature = 0, -- Temperatur, ab der man Schaden durch Frieren erleidet
-    FreezingDamage = 3 -- Wie viel Leben pro Intervall bei Frieren verloren geht
+    CheckInterval = 30,
+    HotTemperature = 28,
+    ThirstRate = 2,
+    HeatDamage = 5,
+    ClothingMultiplier = 1.5,
+    ColdTemperature = 0,
+    FreezingDamage = 3
 }
 
--- Kleidungskonfiguration für Hitzeeffekte
+-- Kleidungskonfiguration
 Config.WarmClothing = {
-    -- Hier die Drawable-IDs für warme Kleidungsstücke eintragen
-    -- Eine Liste von IDs findest du z.B. auf altv.mp
-    jackets = { -- Component ID 11
-        [15] = true, [25] = true, [26] = true, [31] = true, [32] = true, [33] = true, [47] = true, [50] = true,
-        [51] = true, [55] = true, [69] = true, [94] = true, [121] = true, [124] = true, [131] = true,
-    },
-    pants = { -- Component ID 4
-        -- Hier könnten IDs für dicke Hosen stehen, falls gewünscht
-    }
+    jackets = { [15]=true, [25]=true, [26]=true, [31]=true, [32]=true, [33]=true, [47]=true, [50]=true, [51]=true, [55]=true, [69]=true, [94]=true, [121]=true, [124]=true, [131]=true },
+    pants = {}
 }
 
--- 🎃 Herbst-Event (Kürbissuche)
+-- 🎃 Herbst-Event
 Config.AutumnEvent = {
     Enabled = true,
-    DurationDays = 7, -- Wie viele Tage das Event nach dem ersten Start im Herbst laufen soll
-    PumpkinLocations = {
-        -- Hier Koordinaten für Kürbisse eintragen
-        vector3(214.9390, -807.937, 31.014),
-        vector3(218.6911, -934.990, 28.652),
-        vector3(285.1620, -985.747, 47.897),
-    },
+    DurationDays = 7,
+    PumpkinLocations = { vector3(214.9, -807.9, 31.0), vector3(218.6, -934.9, 28.6), vector3(285.1, -985.7, 47.8) },
     Rewards = {
-        common = { -- Hohe Chance
-            { type = "item", name = "pumpkin_pie", amount = 1 },
-            { type = "money", amount = {min = 100, max = 250} }
-        },
-        rare = { -- Mittlere Chance
-            { type = "item", name = "scary_mask", amount = 1 },
-            { type = "money", amount = {min = 500, max = 1000} }
-        },
-        very_rare = { -- Geringe Chance
-            { type = "item", name = "rare_halloween_vehicle_key", amount = 1 },
-            { type = "money", amount = {min = 5000, max = 10000} }
-        }
+        common = { { type = "item", name = "pumpkin_pie", amount = 1 }, { type = "money", amount = {min = 100, max = 250} } },
+        rare = { { type = "item", name = "scary_mask", amount = 1 }, { type = "money", amount = {min = 500, max = 1000} } },
+        very_rare = { { type = "item", name = "rare_halloween_vehicle_key", amount = 1 }, { type = "money", amount = {min = 5000, max = 10000} } }
     },
-    RewardProbabilities = { -- Die Summe muss 100 ergeben
-        common = 70, -- 70%
-        rare = 25,   -- 25%
-        very_rare = 5 -- 5%
-    }
-}
-
--- 🎁 Winter-Event (Geschenkesuche)
-Config.WinterEvent = {
-    Enabled = true,
-    DurationDays = 7, -- Wie viele Tage das Event nach dem ersten Start im Winter laufen soll
-    PresentLocations = {
-        -- Hier Koordinaten für Geschenke eintragen
-        vector3(-80.0684, -823.759, 320.364),
-        vector3(-235.5951, -2003.07, 23.756),
-        vector3(29.9850, -1353.4147, 29.3274),
-    },
-    Rewards = {
-        common = {
-            { type = "item", name = "hot_chocolate", amount = 1 },
-            { type = "money", amount = {min = 100, max = 250} }
-        },
-        rare = {
-            { type = "item", name = "christmas_sweater", amount = 1 },
-            { type = "money", amount = {min = 500, max = 1000} }
-        },
-        very_rare = {
-            { type = "item", name = "rare_winter_vehicle_key", amount = 1 },
-            { type = "money", amount = {min = 5000, max = 10000} }
-        }
-    },
-    RewardProbabilities = { -- Die Summe muss 100 ergeben
-        common = 70,
-        rare = 25,
-        very_rare = 5
-    }
+    RewardProbabilities = { common = 70, rare = 25, very_rare = 5 }
 }
 
 -- ⚡ Dynamische Wetter-Events
 Config.DynamicEvents = {
-    CheckIntervalMinutes = 5, -- Alle wie viele Minuten soll auf ein Event geprüft werden
+    CheckIntervalMinutes = 5,
     PowerOutage = {
-        Chance = 0.20, -- 20% Chance bei Gewitter
-        DurationMinutes = { min = 3, max = 8 }, -- Dauer in Minuten
-        Locations = {
-            { name = "Rockford Hills", coords = vector3(-816.0, 178.0, 72.0), radius = 300.0 },
-            { name = "Vinewood", coords = vector3(230.0, 185.0, 105.0), radius = 250.0 }
-        }
+        Chance = 0.20,
+        DurationMinutes = { min = 3, max = 8 },
+        Locations = { { name = "Rockford Hills", coords = vector3(-816.0, 178.0, 72.0), radius = 300.0 }, { name = "Vinewood", coords = vector3(230.0, 185.0, 105.0), radius = 250.0 } }
     },
     Bushfire = {
-        Chance = 0.15, -- 15% Chance bei Hitzewelle
-        Locations = {
-            vector3(2450.0, 4970.0, 46.0), -- Beispiel im Wald
-            vector3(-1500.0, 4600.0, 40.0)  -- Beispiel in den Hügeln
-        }
+        Chance = 0.15,
+        Locations = { vector3(2450.0, 4970.0, 46.0), vector3(-1500.0, 4600.0, 40.0) }
     },
     Blizzard = {
-        Chance = 0.30, -- 30% Chance bei Schneesturm
-        BlockedRoads = {
-            { name = "Great Ocean Highway", coords = vector3(-2400.0, 2400.0, 10.0) },
-            { name = "Paleto Bay", coords = vector3(150.0, 6600.0, 31.0) }
-        }
+        Chance = 0.30,
+        BlockedRoads = { { name = "Great Ocean Highway", coords = vector3(-2400.0, 2400.0, 10.0) }, { name = "Paleto Bay", coords = vector3(150.0, 6600.0, 31.0) } }
     }
+}
+
+-- 🎁 Winter-Event
+Config.WinterEvent = {
+    Enabled = true,
+    DurationDays = 7,
+    PresentLocations = { vector3(-80.0, -823.7, 320.3), vector3(-235.5, -2003.0, 23.7), vector3(29.9, -1353.4, 29.3) },
+    Rewards = {
+        common = { { type = "item", name = "hot_chocolate", amount = 1 }, { type = "money", amount = {min = 100, max = 250} } },
+        rare = { { type = "item", name = "christmas_sweater", amount = 1 }, { type = "money", amount = {min = 500, max = 1000} } },
+        very_rare = { { type = "item", name = "rare_winter_vehicle_key", amount = 1 }, { type = "money", amount = {min = 5000, max = 10000} } }
+    },
+    RewardProbabilities = { common = 70, rare = 25, very_rare = 5 }
 }

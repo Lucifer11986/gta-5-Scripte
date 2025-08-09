@@ -22,6 +22,29 @@ Citizen.CreateThread(function()
     end
 end)
 
+-- Hitzewellen-Mechanik
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(30000) -- Alle 30 Sekunden prüfen
+        local playerPed = PlayerPedId()
+        local currentWeather = GetWeatherTypeTransition()
+
+        if currentWeather == 'EXTRASUNNY' then
+            if math.random(1, 100) <= 20 then -- 20% Chance auf Hitzeschaden
+                ApplyDamageToPed(playerPed, 5, false)
+                TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Dir ist heiß! Such Schatten oder ein Getränk!" } })
+            end
+
+            -- Durst verbraucht sich schneller
+            local hunger = GetEntityHealth(playerPed)
+            if hunger < 50 then
+                SetEntityHealth(playerPed, hunger - 1)
+                TriggerEvent('chat:addMessage', { args = { "[SOMMER]", "Du hast mehr Durst als gewöhnlich!" } })
+            end
+        end
+    end
+end)
+
 -- Sommer-Aktivitäten (z.B. JetSki-Rennen)
 RegisterNetEvent("sommer:startJetSkiRace")
 AddEventHandler("sommer:startJetSkiRace", function()

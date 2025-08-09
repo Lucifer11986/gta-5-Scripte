@@ -1,52 +1,47 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'Lucifer | Awaria Modding'
-description 'Dynamisches Wetter und Jahreszeiten'
-version '2.3.0' -- Version erhöht
+author 'Lucifer | Awaria Modding - Edited by Jules'
+description 'Dynamisches Wetter und Jahreszeiten mit Events und Survival-Mechaniken'
+version '3.0.0'
 
--- Client-Skripte
 client_scripts {
-    'client/client.lua',
+    'config.lua',
+    'client/survival_effects.lua',
+    'client/environmental_effects.lua',
+    'client/dynamic_events.lua',
     'client/oster_event.lua',
     'client/autumn_event.lua',
     'client/winter_event.lua',
-    -- 'client/season_events.lua', -- (DEAKTIVIERT)
+    -- 'client/season_events.lua', -- DEAKTIVIERT
+    'client/sommer_events.lua',
+	'client/sommermarkt.lua',
     'client/plant_visuals.lua',
     'client/plant_interaction.lua',
     'client/plant_ui.lua',
-    'client/sommer_events.lua',
-	'client/sommermarkt.lua',
-    'client/survival_effects.lua',
-    'client/environmental_effects.lua',
-    'client/dynamic_events.lua', -- NEU
-    'config.lua'
+    'client/client.lua'
 }
 
--- Server-Skripte
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    -- '@mysql-async/lib/MySQL.lua',
-    'server/server.lua',
+    'config.lua',
+    'server/weather_seasons.lua',
+    'server/survival_effects.lua',
+    'server/dynamic_events.lua',
     'server/oster_event.lua',
     'server/autumn_event.lua',
     'server/winter_event.lua',
-    'server/weather_seasons.lua',
-    -- 'server/season_events.lua', -- (DEAKTIVIERT)
-    'server/plant_growth.lua',
-    'server/plant_effects.lua',
+    -- 'server/season_events.lua', -- DEAKTIVIERT
     'server/sommer_events.lua',
 	'server/sommermarkt.lua',
-	'server/hitzwelle.lua',
-    'server/survival_effects.lua',
-    'server/dynamic_events.lua', -- NEU
-    'config.lua'
+	'server/hitzwelle.lua', -- Beinhaltet Wasser-Battle Belohnungen
+    'server/plant_growth.lua',
+    'server/plant_effects.lua',
+    'server/server.lua'
 }
 
--- Geteilte Konfigurationsdatei
 shared_script 'config.lua'
 
--- Stream-Ordner für 3D-Modelle
 files {
     -- Ostern
     'stream/core_eggs.ytyp',
@@ -55,22 +50,16 @@ files {
     'stream/core_egg03.ydr',
     'stream/core_egg04.ydr',
     'stream/core_egg05.ydr',
-    'stream/core_egg06.ydr',
-
-    -- Herbst & Winter (Platzhalter, durch eigene Modelle ersetzen)
-    'stream/prop_pumpkin_01.ydr',
-    'stream/prop_xmas_present_01.ydr'
+    'stream/core_egg06.ydr'
 }
 
 data_file 'DLC_ITYP_REQUEST' 'core_eggs.ytyp'
 
--- Escrow Protection
 escrow_ignore {
-    'config.lua',
+    'config.lua'
 }
 
--- Abhängigkeiten
 dependencies {
-    'es_extended', -- ESX Legacy
-    'oxmysql' -- Sicherstellen, dass OxMySQL als Abhängigkeit vorhanden ist
+    'es_extended',
+    'oxmysql'
 }

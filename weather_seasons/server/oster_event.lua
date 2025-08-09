@@ -27,7 +27,6 @@ function StartEasterEvent()
     isEasterActive = true
     print("[Oster-Event] Es ist Frühling! Das Event wird gestartet.")
 
-    -- Lade bereits gefundene Eier, um sie nicht erneut zu spawnen
     local result = exports.oxmysql:executeSync("SELECT * FROM easter_eggs", {})
     if result then
         for _, row in ipairs(result) do
@@ -35,7 +34,6 @@ function StartEasterEvent()
         end
     end
 
-    -- Wähle neue zufällige Positionen und speichere sie
     if #Config.EggLocations > 0 then
         local randomEggLocations = getRandomEggLocations(10)
         exports.oxmysql:executeSync("DELETE FROM easter_eggs_locations", {})
@@ -52,13 +50,10 @@ function StopEasterEvent()
     if not isEasterActive then return end
     isEasterActive = false
     print("[Oster-Event] Es ist nicht mehr Frühling! Das Event wird gestoppt.")
-    -- Lösche die Eier-Positionen aus der Datenbank
     exports.oxmysql:executeSync("DELETE FROM easter_eggs_locations", {})
-    -- Benachrichtige alle Clients, die Eier und Blips zu entfernen
     TriggerClientEvent("easter_event:removeAllEggs", -1)
 end
 
--- Event-Handler für die Saison-Änderung
 RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     if seasonName == "Frühling" then
@@ -68,15 +63,13 @@ AddEventHandler('season:updateSeason', function(seasonName, temperature)
     end
 end)
 
--- Überprüfe die Jahreszeit beim Start der Ressource
 Citizen.CreateThread(function()
-    Citizen.Wait(2000) -- Warte kurz, damit der Wetter-Export bereit ist
+    Citizen.Wait(2000)
     local currentSeason = exports.weather_seasons:GetCurrentSeason()
     if currentSeason == "Frühling" then
         StartEasterEvent()
     end
 end)
-
 
 RegisterNetEvent("easter_event:spawnEggs")
 AddEventHandler("easter_event:spawnEggs", function()
@@ -90,7 +83,6 @@ AddEventHandler("easter_event:spawnEggs", function()
             table.insert(newEggLocations, vector3(row.x, row.y, row.z))
         end
         TriggerClientEvent("easter_event:createEggs", src, newEggLocations, eggModels)
-        print("[Oster-Event] Ostereier-Daten an Client gesendet.")
     else
         print("[Oster-Event] Fehler beim Laden der Ostereier-Positionen aus der Datenbank.")
     end
@@ -127,23 +119,7 @@ AddEventHandler("easter_event:findEgg", function(eggIndex)
     TriggerClientEvent("easter_event:removeEggBlip", -1, eggIndex)
 end)
 
--- SQL Tabellen Erstellung
 CreateThread(function()
-    exports.oxmysql:executeSync([[
-        CREATE TABLE IF NOT EXISTS easter_eggs_locations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            x FLOAT NOT NULL,
-            y FLOAT NOT NULL,
-            z FLOAT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ]])
-    exports.oxmysql:executeSync([[
-        CREATE TABLE IF NOT EXISTS easter_eggs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            egg_id INT NOT NULL,
-            player_id VARCHAR(255) NOT NULL,
-            found_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ]])
+    exports.oxmysql:executeSync([[ CREATE TABLE IF NOT EXISTS easter_eggs (id INT AUTO_INCREMENT PRIMARY KEY, egg_id INT NOT NULL, player_id VARCHAR(255) NOT NULL, found_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ]])
+    exports.oxmysql:executeSync([[ CREATE TABLE IF NOT EXISTS easter_eggs_locations (id INT AUTO_INCREMENT PRIMARY KEY, x FLOAT NOT NULL, y FLOAT NOT NULL, z FLOAT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); ]])
 end)
