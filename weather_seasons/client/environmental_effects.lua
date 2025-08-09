@@ -4,6 +4,7 @@ local isLeafEffectActive = false
 local leafEffectThread = nil
 
 -- Event-Handler, um die aktuelle Jahreszeit und Temperatur zu speichern
+RegisterNetEvent('season:updateSeason')
 AddEventHandler('season:updateSeason', function(seasonName, temperature)
     currentSeason = seasonName
     currentTemperature = temperature
@@ -39,7 +40,7 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(1000) -- Jede Sekunde prüfen
         local playerPed = PlayerPedId()
-
+        
         if IsPedInAnyVehicle(playerPed, false) then
             local vehicle = GetVehiclePedIsIn(playerPed, false)
             if currentSeason == "Winter" and currentTemperature < 0 then

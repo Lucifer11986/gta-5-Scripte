@@ -29,7 +29,7 @@ Citizen.CreateThread(function()
             if displayHealth < 0 then displayHealth = 0 end
 
             local armor = GetPedArmour(playerPed)
-
+            
             SendNUIMessage({
                 type = "update",
                 health = math.floor(displayHealth),
