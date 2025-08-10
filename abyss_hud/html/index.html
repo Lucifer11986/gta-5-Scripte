@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awaria HUD</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="hud-container">
+        <!-- Gesundheit -->
+        <div class="hud-element" id="health">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="health-progress"></div>
+            <div class="icon">❤️</div>
+            <div class="percentage" id="health-value">100</div>
+        </div>
+        <!-- Rüstung -->
+        <div class="hud-element" id="armor">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="armor-progress"></div>
+            <div class="icon">🛡️</div>
+            <div class="percentage" id="armor-value">100</div>
+        </div>
+        <!-- Hunger -->
+        <div class="hud-element" id="hunger">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="hunger-progress"></div>
+            <div class="icon">🍔</div>
+            <div class="percentage" id="hunger-value">100</div>
+        </div>
+        <!-- Durst (mit Wellen-Effekt-Struktur) -->
+        <div class="hud-element" id="thirst">
+            <div class="circle-bg"></div>
+            <div class="water-progress" id="thirst-progress">
+                <div class="wave"></div>
+                <div class="wave"></div>
+            </div>
+            <div class="icon">💧</div>
+            <div class="percentage" id="thirst-value">100</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

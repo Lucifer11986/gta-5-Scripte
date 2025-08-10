@@ -11,7 +11,7 @@ CreateThread(function()
     while true do
         Wait(300000) -- Alle 5 Minuten
         local season = exports["weather_seasons"]:GetCurrentSeason()
-        
+
         if season == "Summer" then
             currentTemperature = math.random(30, 40) -- Sommer: heiß
         elseif season == "Winter" then

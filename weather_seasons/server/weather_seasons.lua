@@ -68,6 +68,17 @@ function ChangeSeason()
     SaveSeasonAndTemperature(seasonName, currentTemperature)
 end
 
+-- Timer-Schleife für dynamische Temperatur-Änderungen
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(Config.TemperatureChangeIntervalMinutes * 60 * 1000)
+        local seasonData = Config.Seasons[currentSeasonIndex]
+        currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+        print("[Weather Seasons] Temperatur hat sich auf " .. currentTemperature .. "°C geändert.")
+        TriggerClientEvent("season:updateSeason", -1, seasonData.name, currentTemperature)
+    end
+end)
+
 -- Main timer loop for season changes
 Citizen.CreateThread(function()
     while true do
@@ -78,7 +89,6 @@ end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
-        -- Wait a moment for MySQL to be ready
         Citizen.Wait(1000)
         LoadSeasonAndTemperature()
     end
