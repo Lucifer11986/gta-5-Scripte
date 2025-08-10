@@ -1,21 +1,9 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- Lade die Config-Datei
-local configContent = LoadResourceFile(GetCurrentResourceName(), "config.lua")
-if configContent then
-    local env = {}
-    local func, err = load(configContent, "config.lua", "t", env)
-    if func then
-        local success, loadErr = pcall(func)
-        if success then
-            Config = env.Config
-        end
-    end
-end
-
 local currentSeasonIndex = 1
-local currentTemperature = Config.Seasons[currentSeasonIndex].temperature
-local currentWeather = "Clear" -- Standardwert für das Wetter
+local initialSeasonData = Config.Seasons[currentSeasonIndex]
+local currentTemperature = math.random(initialSeasonData.min_temp, initialSeasonData.max_temp)
+local currentWeather = "Clear"
 
 function GetCurrentSeason()
     return Config.Seasons[currentSeasonIndex].name
@@ -29,51 +17,69 @@ function GetCurrentWeather()
     return currentWeather
 end
 
-function GetSeasonIndex(season)
+function GetSeasonIndex(seasonName)
     for i, s in ipairs(Config.Seasons) do
-        if s.name == season then
+        if s.name == seasonName then
             return i
         end
     end
-    return 1
+    return 1 -- Default to Spring if not found
 end
 
 function SaveSeasonAndTemperature(season, temperature)
-    local query = "INSERT INTO server_settings (current_season, current_temperature) VALUES (?, ?)"
-    MySQL.Async.execute(query, {season, temperature})
+    MySQL.Async.execute("INSERT INTO server_settings (current_season, current_temperature) VALUES (?, ?)", {season, temperature})
 end
 
 function LoadSeasonAndTemperature()
     MySQL.Async.fetchAll("SELECT current_season, current_temperature FROM server_settings ORDER BY id DESC LIMIT 1", {}, function(result)
-        if result[1] then
+        if result and result[1] then
             local savedSeason = result[1].current_season
             local savedTemperature = result[1].current_temperature
-
             currentSeasonIndex = GetSeasonIndex(savedSeason)
             currentTemperature = savedTemperature
-
-            TriggerClientEvent("season:updateSeason", -1, savedSeason, savedTemperature)
+            print("[Weather Seasons] Geladene Jahreszeit: " .. savedSeason)
+        else
+            -- No season in DB, start with the first one
+            local seasonData = Config.Seasons[currentSeasonIndex]
+            currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+            print("[Weather Seasons] Keine gespeicherte Jahreszeit gefunden, starte mit: " .. seasonData.name)
+            SaveSeasonAndTemperature(seasonData.name, currentTemperature)
         end
+        -- Signal that the system is ready
+        TriggerEvent("weather_seasons:initialized")
+        -- Update clients with the correct initial state
+        TriggerClientEvent("season:updateSeason", -1, GetCurrentSeason(), currentTemperature)
+        TriggerClientEvent("season:notifySeasonChange", -1, GetCurrentSeason())
     end)
 end
 
-local function ChangeSeason()
+function ChangeSeason()
     currentSeasonIndex = currentSeasonIndex + 1
     if currentSeasonIndex > #Config.Seasons then
         currentSeasonIndex = 1
     end
 
-    currentTemperature = Config.Seasons[currentSeasonIndex].temperature
-    local seasonName = Config.Seasons[currentSeasonIndex].name
+    local seasonData = Config.Seasons[currentSeasonIndex]
+    currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+    local seasonName = seasonData.name
 
     TriggerClientEvent("season:updateSeason", -1, seasonName, currentTemperature)
     TriggerClientEvent("season:notifySeasonChange", -1, seasonName)
-
     SaveSeasonAndTemperature(seasonName, currentTemperature)
 end
 
-ChangeSeason()
+-- Timer-Schleife für dynamische Temperatur-Änderungen
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(Config.TemperatureChangeIntervalMinutes * 60 * 1000)
+        local seasonData = Config.Seasons[currentSeasonIndex]
+        currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+        print("[Weather Seasons] Temperatur hat sich auf " .. currentTemperature .. "°C geändert.")
+        TriggerClientEvent("season:updateSeason", -1, seasonData.name, currentTemperature)
+    end
+end)
 
+-- Main timer loop for season changes
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(Config.SeasonDuration * 1000)
@@ -81,10 +87,11 @@ Citizen.CreateThread(function()
     end
 end)
 
-RegisterNetEvent("season:getCurrentSeason")
-AddEventHandler("season:getCurrentSeason", function()
-    local src = source
-    TriggerClientEvent("season:updateSeason", src, Config.Seasons[currentSeasonIndex].name, currentTemperature)
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        Citizen.Wait(1000)
+        LoadSeasonAndTemperature()
+    end
 end)
 
 RegisterNetEvent("weather:setWeather")
@@ -93,23 +100,10 @@ AddEventHandler("weather:setWeather", function(weatherType)
     TriggerClientEvent("weather:updateWeather", -1, weatherType)
 end)
 
-RegisterNetEvent("weather:getWeather")
-AddEventHandler("weather:getWeather", function()
-    local src = source
-    TriggerClientEvent("weather:updateWeather", src, currentWeather)
-end)
-
-AddEventHandler('onResourceStart', function(resourceName)
-    if resourceName == GetCurrentResourceName() then
-        LoadSeasonAndTemperature()
-    end
-end)
-
-function IsHeatwaveActive()
-    local currentTemp = GetCurrentTemperature()
-    return currentTemp and currentTemp >= Config.HeatwaveTemperature
-end
-
-ESX.RegisterServerCallback("weather:getTemperature", function(source, cb)
-    cb(GetCurrentTemperature())
+-- Exports for other server scripts
+exports("GetCurrentSeason", GetCurrentSeason)
+exports("GetCurrentTemperature", GetCurrentTemperature)
+exports("GetCurrentWeather", GetCurrentWeather)
+exports("IsHeatwaveActive", function()
+    return GetCurrentTemperature() >= Config.HeatwaveTemperature
 end)
