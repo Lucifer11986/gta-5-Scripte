@@ -53,17 +53,26 @@ window.addEventListener('message', function(event) {
     } else if (data.type === "updateVehicle") {
         // This is the logic to UPDATE the vehicle hud
         const speedArc = document.getElementById('speed-arc');
+        const speedNeedle = document.getElementById('speed-needle');
         const speedValue = document.getElementById('speed-value');
         const fuelValue = document.getElementById('fuel-value');
         const engineValue = document.getElementById('engine-value');
 
-        const maxSpeed = 250;
+        const maxSpeed = 250; // Max speed in km/h for the gauge
         const speed_percent = Math.min(data.speed / maxSpeed, 1);
-        const speedAngle = speed_percent * 270;
 
+        // Update Arc
+        const speedAngle = speed_percent * 270;
         if (speedArc) {
             speedArc.style.setProperty('--speed-angle', `${speedAngle}deg`);
         }
+
+        // Update Needle
+        const needleRotation = (speed_percent * 270) - 135; // Map to -135deg to +135deg range
+        if (speedNeedle) {
+            speedNeedle.style.transform = `rotate(${needleRotation}deg)`;
+        }
+
         if (speedValue) {
             speedValue.textContent = data.speed;
         }

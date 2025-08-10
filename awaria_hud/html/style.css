@@ -171,10 +171,30 @@ body {
     transition: background 0.1s linear;
 }
 
+.speed-needle {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 40%;
+    background: #ff3838;
+    transform-origin: bottom center;
+    border-radius: 2px;
+    box-shadow: 0 0 8px #ff3838;
+    transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 10;
+}
+
 .speed-display {
     text-align: center;
     margin-top: -110px; /* Pull up into the arc */
     color: white;
+    z-index: 11; /* Ensure it's above the needle */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 0.9;
 }
 
 .speed-display #speed-value {
@@ -186,11 +206,10 @@ body {
     font-size: 1.2em;
     font-weight: 500;
     color: #ccc;
-    margin-left: 5px;
 }
 
 .vehicle-info {
-    margin-top: 20px;
+    margin-top: 25px; /* Increased margin */
     color: #f1f1f1;
     font-size: 1.1em;
     background: rgba(0,0,0,0.3);
