@@ -1,18 +1,13 @@
 fx_version 'cerulean'
 game 'gta5'
-
-author 'Lucifer | Awaria Modding'
-description 'Dynamic No NPC'
-version '1.5.0'
-
-client_scripts {
-    'config.lua', -- Hinzufügen der config.lua
-    'client/client.lua'
-}
-
-server_scripts {
-    'server/server.lua'
-}
-
--- Escrow Protection
 lua54 'yes'
+
+author 'Lucifer | Awaria Modding & Refactored by Jules'
+description 'Ein hochgradig konfigurierbares Skript zur dynamischen Steuerung von NPCs und Fahrzeugen mit Zonen, Zeitprofilen und Fahrzeugschutz.'
+version '3.0.0'
+
+shared_script 'config.lua'
+
+client_script 'client/client.lua'
+
+server_script 'server/server.lua'
