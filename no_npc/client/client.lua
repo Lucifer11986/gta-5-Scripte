@@ -24,6 +24,8 @@ end
 -- ## EVENT HANDLERS (Server Communication)
 -- #############################################################################
 
+local protectedVehicles = {} -- table to hold netIds of protected vehicles
+
 RegisterNetEvent('no_npc:updateStates')
 AddEventHandler('no_npc:updateStates', function(newNpcState, newVehicleState)
     npcState = newNpcState
@@ -40,6 +42,15 @@ AddEventHandler('updateSafeZones', function(newSafeZones)
         print(('[no-npc] Received %d safe zones.'):format(#safeZones))
     end
 end)
+
+RegisterNetEvent('no_npc:syncProtectedVehicles')
+AddEventHandler('no_npc:syncProtectedVehicles', function(syncedProtectedVehicles)
+    protectedVehicles = syncedProtectedVehicles
+    if Config.DebugMode then
+        print(('[no-npc] Received %d protected vehicles.'):format(#protectedVehicles))
+    end
+end)
+
 
 -- #############################################################################
 -- ## CORE FUNCTIONS (NPC/Vehicle Removal & Wildlife Spawning)
@@ -67,14 +78,18 @@ local function removeNPCs()
             table.insert(Config.ExemptNPCHashes, GetHashKey(modelName))
         end
     end
-
+    
     local playerPed = PlayerPedId()
     local peds = GetGamePool('CPed')
 
     for _, ped in ipairs(peds) do
         if DoesEntityExist(ped) and not IsPedAPlayer(ped) and ped ~= playerPed then
-            local pedCoords = GetEntityCoords(ped)
+            -- Check for mission entity protection
+            if Config.IgnoreMissionEntities and IsEntityAMissionEntity(ped) then
+                goto continue
+            end
 
+            local pedCoords = GetEntityCoords(ped)
             if not isInSafeZone(pedCoords) then
                 local modelHash = GetEntityModel(ped)
                 if not table_contains(Config.ExemptNPCHashes, modelHash) then
@@ -82,6 +97,7 @@ local function removeNPCs()
                 end
             end
         end
+        ::continue::
     end
 end
 
@@ -101,8 +117,18 @@ local function removeVehicles()
 
     for _, vehicle in ipairs(vehicles) do
         if DoesEntityExist(vehicle) then
-            local vehicleCoords = GetEntityCoords(vehicle)
+            -- Check for mission entity protection
+            if Config.IgnoreMissionEntities and IsEntityAMissionEntity(vehicle) then
+                goto continue
+            end
 
+            -- Check for protection via export system
+            local netId = VehToNet(vehicle)
+            if protectedVehicles[netId] then
+                goto continue
+            end
+
+            local vehicleCoords = GetEntityCoords(vehicle)
             if not isInSafeZone(vehicleCoords) then
                 local driver = GetPedInVehicleSeat(vehicle, -1)
 
@@ -114,6 +140,7 @@ local function removeVehicles()
                 end
             end
         end
+        ::continue::
     end
 end
 
@@ -122,7 +149,7 @@ local function spawnWildlife()
     if not Config.SpawnWildlife or not npcState then return end
 
     local playerCoords = GetEntityCoords(PlayerPedId())
-
+    
     if GetDistance(playerCoords, Config.WildlifeSpawnArea.center) <= Config.WildlifeSpawnArea.radius then
         local model = Config.WildlifeModels[math.random(#Config.WildlifeModels)]
         local modelHash = GetHashKey(model)
@@ -152,22 +179,46 @@ end
 -- ## MAIN THREADS
 -- #############################################################################
 
+local timeMultiplier = { ped = 1.0, vehicle = 1.0 }
+
 -- High-performance loop for frame-by-frame natives
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
 
-        if npcState then
-            SetPedDensityMultiplierThisFrame(0.0)
-            SetScenarioPedDensityMultiplierThisFrame(0.0, 0.0)
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local currentPedDensity = Config.DefaultDensity.ped
+        local currentVehicleDensity = Config.DefaultDensity.vehicle
+
+        -- Zonen-basierte Dichte ermitteln
+        for _, zone in ipairs(Config.DensityZones) do
+            if GetDistance(playerCoords, zone.center) <= zone.radius then
+                currentPedDensity = zone.pedDensity
+                currentVehicleDensity = zone.vehicleDensity
+                break -- Erste gefundene Zone wird verwendet
+            end
+        end
+        
+        -- Globale Server-Schalter anwenden
+        if not npcState then
+            currentPedDensity = 0.0
+        end
+        if not vehicleState then
+            currentVehicleDensity = 0.0
         end
 
-        if vehicleState then
-            SetVehicleDensityMultiplierThisFrame(0.0)
-            SetRandomVehicleDensityMultiplierThisFrame(0.0)
-            SetParkedVehicleDensityMultiplierThisFrame(0.0)
-        end
+        -- Zeit-basierte Multiplikatoren anwenden
+        currentPedDensity = currentPedDensity * timeMultiplier.ped
+        currentVehicleDensity = currentVehicleDensity * timeMultiplier.vehicle
 
+        -- Dichte-Natives anwenden
+        SetPedDensityMultiplierThisFrame(currentPedDensity)
+        SetScenarioPedDensityMultiplierThisFrame(currentPedDensity, currentPedDensity)
+        SetVehicleDensityMultiplierThisFrame(currentVehicleDensity)
+        SetRandomVehicleDensityMultiplierThisFrame(currentVehicleDensity)
+        SetParkedVehicleDensityMultiplierThisFrame(currentVehicleDensity)
+        
+        -- Zusätzliche Natives zur Reduzierung (immer an)
         SetGarbageTrucks(false)
         SetRandomBoats(false)
         SetCreateRandomCops(false)
@@ -180,6 +231,51 @@ Citizen.CreateThread(function()
         Citizen.Wait(Config.CleanupInterval)
         removeNPCs()
         removeVehicles()
+    end
+end)
+
+-- Thread to manage time-based profiles
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(60000) -- Check every minute
+
+        local currentHour = os.date("*t").hour
+        local activeProfileFound = false
+
+        -- Default multipliers
+        timeMultiplier.ped = 1.0
+        timeMultiplier.vehicle = 1.0
+
+        for _, profile in ipairs(Config.TimeProfiles) do
+            local isOvernight = profile.startHour > profile.endHour
+            local isActive = false
+
+            if isOvernight then
+                if currentHour >= profile.startHour or currentHour < profile.endHour then
+                    isActive = true
+                end
+            else
+                if currentHour >= profile.startHour and currentHour < profile.endHour then
+                    isActive = true
+                end
+            end
+
+            if isActive then
+                timeMultiplier.ped = profile.pedMultiplier
+                timeMultiplier.vehicle = profile.vehicleMultiplier
+                activeProfileFound = true
+                if Config.DebugMode then
+                    print(('[no-npc] Time profile "%s" is now active.'):format(profile.name))
+                end
+                break
+            end
+        end
+
+        if not activeProfileFound and Config.DebugMode then
+            -- This message should only show once when no profile is active anymore
+            -- To avoid spamming, we could add a state check, but for now this is fine.
+            -- print('[no-npc] No specific time profile active. Using default multipliers (1.0).')
+        end
     end
 end)
 

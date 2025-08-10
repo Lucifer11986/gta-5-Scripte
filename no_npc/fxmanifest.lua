@@ -2,9 +2,9 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'Lucifer | Awaria Modding & Refactored by Jules'
-description 'Ein performantes Skript zur dynamischen Steuerung von NPCs und Fahrzeugen.'
-version '2.0.0'
+author 'AbyssForge Studio'
+description 'Ein hochgradig konfigurierbares Skript zur dynamischen Steuerung von NPCs und Fahrzeugen mit Zonen, Zeitprofilen und Fahrzeugschutz.'
+version '3.0.0'
 
 shared_script 'config.lua'
 
