@@ -1,0 +1,132 @@
+:root {
+    --size: 55px;
+    --border-width: 5px;
+    --bg-color: rgba(0, 0, 0, 0.4);
+    --font-color: #f1f1f1;
+
+    --health-color: #e74c3c;
+    --armor-color: #3498db;
+    --hunger-color: #f1c40f;
+    --thirst-color: #3498db;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    color: var(--font-color);
+}
+
+#hud-container {
+    position: absolute;
+    bottom: 215px; /* Position moved up slightly */
+    left: 20px;
+    display: flex;
+    gap: 15px;
+}
+
+.hud-element {
+    width: var(--size);
+    height: var(--size);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+}
+
+.circle-bg {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--bg-color);
+    position: absolute;
+    z-index: 1;
+}
+
+.circle-progress {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 2;
+    background: conic-gradient(var(--health-color) 0deg, transparent 0deg);
+    transition: background 0.3s ease-out;
+}
+
+#health-progress { background-image: conic-gradient(var(--health-color) 0deg, transparent 0deg); }
+#armor-progress { background-image: conic-gradient(var(--armor-color) 0deg, transparent 0deg); }
+#hunger-progress { background-image: conic-gradient(var(--hunger-color) 0deg, transparent 0deg); }
+
+.icon {
+    font-size: calc(var(--size) * 0.35);
+    z-index: 3;
+    transition: transform 0.2s ease;
+}
+
+.percentage {
+    position: absolute;
+    bottom: 8px;
+    font-size: calc(var(--size) * 0.2);
+    font-weight: 700;
+    z-index: 3;
+}
+.percentage::after {
+    content: '%';
+    font-size: 0.8em;
+}
+
+
+/* --- Health Animation --- */
+.hud-element.low-health .icon {
+    animation: heartbeat 1s infinite;
+}
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* --- Hunger Animation --- */
+.hud-element.low-hunger .icon {
+    animation: rumble 0.5s infinite linear;
+}
+@keyframes rumble {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-1px, 1px); }
+    75% { transform: translate(1px, -1px); }
+}
+
+/* --- Thirst (Water) Animation --- */
+.water-progress {
+    width: calc(100% - var(--border-width) * 2);
+    height: calc(100% - var(--border-width) * 2);
+    border-radius: 50%;
+    position: absolute;
+    z-index: 2;
+    overflow: hidden;
+    background: var(--bg-color);
+    border: var(--border-width) solid var(--thirst-color);
+    transform: rotate(180deg); /* Flip to fill from bottom */
+}
+.wave {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-color: var(--thirst-color);
+    border-radius: 40%;
+    bottom: 0; /* Start hidden */
+    left: -50%;
+    animation: wave-move 3s infinite linear;
+    transition: bottom 0.5s ease-out;
+}
+.wave:nth-child(2) {
+    border-radius: 35%;
+    animation-duration: 3.5s;
+    opacity: 0.7;
+}
+@keyframes wave-move {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
