@@ -78,7 +78,7 @@ local function removeNPCs()
             table.insert(Config.ExemptNPCHashes, GetHashKey(modelName))
         end
     end
-
+    
     local playerPed = PlayerPedId()
     local peds = GetGamePool('CPed')
 
@@ -149,7 +149,7 @@ local function spawnWildlife()
     if not Config.SpawnWildlife or not npcState then return end
 
     local playerCoords = GetEntityCoords(PlayerPedId())
-
+    
     if GetDistance(playerCoords, Config.WildlifeSpawnArea.center) <= Config.WildlifeSpawnArea.radius then
         local model = Config.WildlifeModels[math.random(#Config.WildlifeModels)]
         local modelHash = GetHashKey(model)
@@ -179,7 +179,7 @@ end
 -- ## MAIN THREADS
 -- #############################################################################
 
-local timeMultiplier = { ped = 1.0, vehicle = 1.0 } -- Wird in Schritt 3 implementiert
+local timeMultiplier = { ped = 1.0, vehicle = 1.0 }
 
 -- High-performance loop for frame-by-frame natives
 Citizen.CreateThread(function()
@@ -198,7 +198,7 @@ Citizen.CreateThread(function()
                 break -- Erste gefundene Zone wird verwendet
             end
         end
-
+        
         -- Globale Server-Schalter anwenden
         if not npcState then
             currentPedDensity = 0.0
@@ -207,7 +207,7 @@ Citizen.CreateThread(function()
             currentVehicleDensity = 0.0
         end
 
-        -- Zeit-basierte Multiplikatoren anwenden (wird in Schritt 3 relevant)
+        -- Zeit-basierte Multiplikatoren anwenden
         currentPedDensity = currentPedDensity * timeMultiplier.ped
         currentVehicleDensity = currentVehicleDensity * timeMultiplier.vehicle
 
@@ -217,7 +217,7 @@ Citizen.CreateThread(function()
         SetVehicleDensityMultiplierThisFrame(currentVehicleDensity)
         SetRandomVehicleDensityMultiplierThisFrame(currentVehicleDensity)
         SetParkedVehicleDensityMultiplierThisFrame(currentVehicleDensity)
-
+        
         -- Zusätzliche Natives zur Reduzierung (immer an)
         SetGarbageTrucks(false)
         SetRandomBoats(false)

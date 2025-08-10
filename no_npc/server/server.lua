@@ -86,8 +86,6 @@ end)
 -- ## ADMIN BEFEHLE
 -- #############################################################################
 
--- (Die Admin-Befehle bleiben unverändert, da sie sich nicht auf das Fahrzeugschutz-System beziehen)
-
 -- Schaltet das Spawnen von NPCs und Fahrzeugen global um
 RegisterCommand("toggleSpawning", function(source, args, rawCommand)
     local src = source
@@ -133,10 +131,10 @@ RegisterCommand("getSafeZones", function(source, args, rawCommand)
     local src = source
     if IsPlayerAceAllowed(src, "admin.safezone") then
         if #safeZones == 0 then
-            TriggerClientEvent("chat:addMessage", src, { args = {"^2System", "Es sind keine Sicherheitszonen definiert."}})
+            TriggerClientEvent("chat:addMessage", src, { args = {"^2System", "Es sind keine Sicherheitszonen definiert."} })
             return
         end
-        TriggerClientEvent("chat:addMessage", src, { args = {"^2System", "Aktive Sicherheitszonen:"}})
+        TriggerClientEvent("chat:addMessage", src, { args = {"^2System", "Aktive Sicherheitszonen:"} })
         for i, zone in ipairs(safeZones) do
             local msg = string.format("- Zone %d: Radius %.1f bei (%.1f, %.1f, %.1f)", i, zone.radius, zone.coords.x, zone.coords.y, zone.coords.z)
             TriggerClientEvent("chat:addMessage", src, { args = {"", msg} })
