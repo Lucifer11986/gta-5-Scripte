@@ -1,13 +1,16 @@
 :root {
-    --size: 85px;
-    --border-width: 5px;
-    --bg-color: rgba(0, 0, 0, 0.4);
+    --size: 80px;
     --font-color: #f1f1f1;
+    --bg-color: rgba(10, 10, 10, 0.3);
+    --glow-strength: 10px;
 
-    --health-color: #e74c3c;
+    /* Neon Colors */
+    --health-color: #ff3838;
     --armor-color: #3498db;
     --hunger-color: #f1c40f;
-    --thirst-color: #3498db;
+    --thirst-color: #5dade2;
+    --addiction-color: #9b59b6;
+    --temperature-color: #e67e22;
 }
 
 body {
@@ -21,10 +24,11 @@ body {
 
 #hud-container {
     position: absolute;
-    bottom: 40px; /* Position moved up slightly */
-    left: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    gap: 15px;
+    gap: 20px;
 }
 
 .hud-element {
@@ -34,7 +38,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
 }
 
 .circle-bg {
@@ -42,6 +45,7 @@ body {
     height: 100%;
     border-radius: 50%;
     background: var(--bg-color);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     position: absolute;
     z-index: 1;
 }
@@ -52,110 +56,107 @@ body {
     border-radius: 50%;
     position: absolute;
     z-index: 2;
-    background: conic-gradient(var(--health-color) 0deg, transparent 0deg);
-    transition: background 0.3s ease-out;
+    --progress-color: white;
+    background: conic-gradient(var(--progress-color) 0deg, transparent 0deg);
+    transition: background 0.2s ease-out;
+    filter: drop-shadow(0 0 3px var(--progress-color));
+    mask-image: radial-gradient(circle at center, transparent 90%, #000 91%);
 }
 
-#health-progress { background-image: conic-gradient(var(--health-color) 0deg, transparent 0deg); }
-#armor-progress { background-image: conic-gradient(var(--armor-color) 0deg, transparent 0deg); }
-#hunger-progress { background-image: conic-gradient(var(--hunger-color) 0deg, transparent 0deg); }
+#health-progress { --progress-color: var(--health-color); }
+#armor-progress { --progress-color: var(--armor-color); }
+#hunger-progress { --progress-color: var(--hunger-color); }
+#thirst-progress { --progress-color: var(--thirst-color); }
+#addiction-progress { --progress-color: var(--addiction-color); }
+#temperature-progress { --progress-color: var(--temperature-color); }
+
+
+.inner-content {
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
 
 .icon {
-    font-size: calc(var(--size) * 0.35);
-    z-index: 3;
-    transition: transform 0.2s ease;
+    font-size: calc(var(--size) * 0.4);
+    line-height: 1;
 }
 
 .percentage {
-    position: absolute;
-    bottom: 8px;
-    font-size: calc(var(--size) * 0.2);
+    font-size: calc(var(--size) * 0.22);
     font-weight: 700;
-    z-index: 3;
+    line-height: 1;
 }
 .percentage::after {
     content: '%';
-    font-size: 0.8em;
+    font-size: 0.7em;
+}
+#temperature .percentage::after {
+    content: '°C';
 }
 
 
-/* --- Health Animation --- */
-.hud-element.low-health .icon {
-    animation: heartbeat 1s infinite;
+/* --- Animations --- */
+.hud-element.low-health .inner-content {
+    animation: neon-pulse 1s infinite;
+    --pulse-color: var(--health-color);
 }
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
-
-/* --- Hunger Animation --- */
-.hud-element.low-hunger .icon {
-    animation: rumble 0.5s infinite linear;
-}
-@keyframes rumble {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-1px, 1px); }
-    75% { transform: translate(1px, -1px); }
+.hud-element.low-hunger .inner-content {
+    animation: neon-pulse 1.5s infinite;
+    --pulse-color: var(--hunger-color);
 }
 
-/* --- Thirst (Water) Animation --- */
-.water-progress {
-    width: calc(100% - var(--border-width) * 2);
-    height: calc(100% - var(--border-width) * 2);
-    border-radius: 50%;
-    position: absolute;
-    z-index: 2;
-    overflow: hidden;
-    background: var(--bg-color);
-    border: var(--border-width) solid var(--thirst-color);
-    transform: rotate(180deg); /* Flip to fill from bottom */
-}
-.wave {
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    background-color: var(--thirst-color);
-    border-radius: 40%;
-    bottom: 0; /* Start hidden */
-    left: -50%;
-    animation: wave-move 3s infinite linear;
-    transition: bottom 0.5s ease-out;
-}
-.wave:nth-child(2) {
-    border-radius: 35%;
-    animation-duration: 3.5s;
-    opacity: 0.7;
-}
-@keyframes wave-move {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+@keyframes neon-pulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px var(--pulse-color));
+    }
+    50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 15px var(--pulse-color));
+    }
 }
 
 /* --- Vehicle HUD (Minimalist Digital Arc) --- */
 #vehicle-hud-container {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 250px;
-    height: 125px;
+    bottom: 30px;
+    right: 30px;
+    width: 280px;
     display: flex;
-    justify-content: center;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Roboto', sans-serif;
     filter: drop-shadow(0 0 5px rgba(0,0,0,0.7));
+
+    /* Animation */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+#vehicle-hud-container.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .speed-arc-container {
     width: 250px;
-    height: 250px;
-    position: absolute;
-    bottom: 0;
-    mask-image: linear-gradient(to top, #000 0%, #000 50%, transparent 50%, transparent 100%);
+    height: 125px; /* Half of width for semi-circle */
+    position: relative;
+    overflow: hidden; /* This clips the half we don't need */
 }
 
 .speed-arc-progress {
-    width: 100%;
-    height: 100%;
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 15px; /* (Container_width - this_width) / 2 */
     --start-color: #3498db;
     --end-color: #e74c3c;
     --speed-angle: 0deg; /* Default value, updated by JS */
@@ -166,39 +167,40 @@ body {
         rgba(0,0,0,0.2) var(--speed-angle),
         rgba(0,0,0,0.2) 270deg
     );
-    mask-image: radial-gradient(circle at center, transparent 80%, #000 81%);
+    mask-image: radial-gradient(circle at center, transparent 90%, #000 91%);
     transition: background 0.1s linear;
 }
 
 .speed-display {
     text-align: center;
+    margin-top: -110px; /* Pull up into the arc */
     color: white;
-    font-family: 'Roboto', sans-serif;
 }
 
 .speed-display #speed-value {
     font-size: 4em;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .speed-display .unit {
     font-size: 1.2em;
     font-weight: 500;
     color: #ccc;
-    margin-left: 2px;
+    margin-left: 5px;
 }
 
 .vehicle-info {
-    position: absolute;
-    bottom: 10px;
+    margin-top: 20px;
     color: #f1f1f1;
     font-size: 1.1em;
     background: rgba(0,0,0,0.3);
     padding: 5px 15px;
     border-radius: 8px;
 }
-
 .vehicle-info .separator {
     margin: 0 10px;
     color: #555;
+}
+.vehicle-info .fa-solid {
+    margin-right: 5px;
 }

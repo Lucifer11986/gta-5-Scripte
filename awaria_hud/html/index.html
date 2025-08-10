@@ -6,6 +6,7 @@
     <title>Awaria HUD</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body>
     <div id="hud-container">
@@ -13,39 +14,61 @@
         <div class="hud-element" id="health">
             <div class="circle-bg"></div>
             <div class="circle-progress" id="health-progress"></div>
-            <div class="icon">❤️</div>
-            <div class="percentage" id="health-value">100</div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-heart"></i></div>
+                <div class="percentage" id="health-value">100</div>
+            </div>
         </div>
         <!-- Rüstung -->
         <div class="hud-element" id="armor">
             <div class="circle-bg"></div>
             <div class="circle-progress" id="armor-progress"></div>
-            <div class="icon">🛡️</div>
-            <div class="percentage" id="armor-value">100</div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="percentage" id="armor-value">100</div>
+            </div>
         </div>
         <!-- Hunger -->
         <div class="hud-element" id="hunger">
             <div class="circle-bg"></div>
             <div class="circle-progress" id="hunger-progress"></div>
-            <div class="icon">🍔</div>
-            <div class="percentage" id="hunger-value">100</div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-burger"></i></div>
+                <div class="percentage" id="hunger-value">100</div>
+            </div>
         </div>
-        <!-- Durst (mit Wellen-Effekt-Struktur) -->
+        <!-- Durst -->
         <div class="hud-element" id="thirst">
             <div class="circle-bg"></div>
-            <div class="water-progress" id="thirst-progress">
-                <div class="wave"></div>
-                <div class="wave"></div>
+            <div class="circle-progress" id="thirst-progress"></div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-droplet"></i></div>
+                <div class="percentage" id="thirst-value">100</div>
             </div>
-            <div class="icon">💧</div>
-            <div class="percentage" id="thirst-value">100</div>
+        </div>
+        <!-- Sucht -->
+        <div class="hud-element" id="addiction">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="addiction-progress"></div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-pills"></i></div>
+                <div class="percentage" id="addiction-value">0</div>
+            </div>
+        </div>
+        <!-- Temperatur -->
+        <div class="hud-element" id="temperature">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="temperature-progress"></div>
+            <div class="inner-content">
+                <div class="icon"><i class="fa-solid fa-temperature-half"></i></div>
+                <div class="percentage" id="temperature-value">15</div>
+            </div>
         </div>
     </div>
 
     <!-- Fahrzeug-HUD (Minimalist Digital-Design) -->
-    <div id="vehicle-hud-container" style="display: none;">
+    <div id="vehicle-hud-container">
         <div class="speed-arc-container">
-            <div class="speed-arc-bg"></div>
             <div class="speed-arc-progress" id="speed-arc"></div>
         </div>
         <div class="speed-display">
@@ -53,12 +76,11 @@
             <span class="unit">KM/H</span>
         </div>
         <div class="vehicle-info">
-            <span>⛽</span> <span id="fuel-value">100</span>%
+            <span><i class="fa-solid fa-gas-pump"></i></span> <span id="fuel-value">100</span>%
             <span class="separator">|</span>
-            <span>⚙️</span> <span id="engine-value">100</span>%
+            <span><i class="fa-solid fa-car-on"></i></span> <span id="engine-value">100</span>%
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

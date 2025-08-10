@@ -16,39 +16,7 @@ AddEventHandler('esx_status:onTick', function(status)
     end
 end)
 
--- Neuer Thread für das Fahrzeug-HUD
-Citizen.CreateThread(function()
-    local inVehicle = false
-    local wasInVehicle = false
-
-    while true do
-        Citizen.Wait(250) -- Check for vehicle status 4 times a second
-
-        local playerPed = PlayerPedId()
-        local currentVehicle = GetVehiclePedIsIn(playerPed, false)
-        inVehicle = (currentVehicle ~= 0)
-
-        if inVehicle ~= wasInVehicle then
-            SendNUIMessage({ type = "showVehicle", show = inVehicle })
-            wasInVehicle = inVehicle
-        end
-
-        if inVehicle then
-            local speed = GetEntitySpeed(currentVehicle) * 3.6 -- Speed in km/h
-            local fuel = GetVehicleFuelLevel(currentVehicle)
-            local engineHealth = GetVehicleEngineHealth(currentVehicle) / 10 -- Convert from 0-1000 to 0-100 scale
-
-            SendNUIMessage({
-                type = "updateVehicle",
-                speed = math.floor(speed),
-                fuel = math.floor(fuel),
-                engineHealth = math.floor(engineHealth)
-            })
-        end
-    end
-end)
-
--- Haupt-Thread für die HUD-Aktualisierung
+-- Haupt-Thread für die Spieler-HUD-Aktualisierung
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(500) -- Aktualisierungsintervall
@@ -68,6 +36,35 @@ Citizen.CreateThread(function()
                 armor = armor,
                 hunger = math.floor(hunger),
                 thirst = math.floor(thirst)
+            })
+        end
+    end
+end)
+
+-- Thread für das Fahrzeug-HUD
+Citizen.CreateThread(function()
+    local wasInVehicle = false
+    while true do
+        Citizen.Wait(250)
+        local playerPed = PlayerPedId()
+        local currentVehicle = GetVehiclePedIsIn(playerPed, false)
+        local inVehicle = (currentVehicle ~= 0)
+
+        if inVehicle ~= wasInVehicle then
+            SendNUIMessage({ type = "showVehicle", show = inVehicle })
+            wasInVehicle = inVehicle
+        end
+
+        if inVehicle then
+            local speed = GetEntitySpeed(currentVehicle) * 3.6
+            local fuel = GetVehicleFuelLevel(currentVehicle)
+            local engineHealth = GetVehicleEngineHealth(currentVehicle) / 10
+
+            SendNUIMessage({
+                type = "updateVehicle",
+                speed = math.floor(speed),
+                fuel = math.floor(fuel),
+                engineHealth = math.floor(engineHealth)
             })
         end
     end
