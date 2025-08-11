@@ -27,9 +27,9 @@ end
 -- Funktion zum Spawnen der NPCs
 local function spawnNPCs()
     for _, station in ipairs(Config.PostStations) do
-        RequestModel(npcModel)
-        while not HasModelLoaded(npcModel) do Citizen.Wait(10) end
-        local npc = CreatePed(4, npcModel, station.x, station.y, station.z, station.heading, false, true)
+        RequestModel(GetHashKey(npcModel))
+        while not HasModelLoaded(GetHashKey(npcModel)) do Citizen.Wait(10) end
+        local npc = CreatePed(4, GetHashKey(npcModel), station.x, station.y, station.z, station.heading, false, true)
         SetEntityHeading(npc, station.heading)
         FreezeEntityPosition(npc, true)
         SetEntityInvincible(npc, true)
@@ -147,16 +147,14 @@ CreateThread(function()
         Citizen.Wait(0)
         if not isUIOpen then
             local playerCoords = GetEntityCoords(PlayerPedId())
-            local nearStation = false
             for _, station in ipairs(Config.PostStations) do
                 local stationCoords = vector3(station.x, station.y, station.z)
                 if #(playerCoords - stationCoords) < 2.0 then
-                    nearStation = true
                     drawText3D(stationCoords, "~g~Drücke [E]~w~, um die Poststation zu öffnen")
                     if IsControlJustReleased(0, 38) then -- E
                         ExecuteCommand("openMail")
                     end
-                    break
+                    break 
                 end
             end
         end

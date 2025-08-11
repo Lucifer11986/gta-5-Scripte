@@ -4,6 +4,7 @@ local isPowerOutageActive = false
 local blizzardBlips = {}
 local bushfireFires = {}
 local isIcyRoadsActive = false
+local bushfireBlip = nil
 
 -- Stromausfall-Event
 RegisterNetEvent("dynamic_events:powerOutage")
@@ -48,6 +49,30 @@ AddEventHandler("dynamic_events:startBushfireClient", function(x, y, z)
     table.insert(bushfireFires, fireHandle)
 end)
 
+-- Buschfeuer Blip hinzufügen
+RegisterNetEvent("dynamic_events:addBushfireBlip")
+AddEventHandler("dynamic_events:addBushfireBlip", function(x, y, z)
+    if bushfireBlip then
+        RemoveBlip(bushfireBlip)
+    end
+    bushfireBlip = AddBlipForCoord(x, y, z)
+    SetBlipSprite(bushfireBlip, 436) -- Feuer-Icon
+    SetBlipColour(bushfireBlip, 1)   -- Rot
+    SetBlipScale(bushfireBlip, 1.2)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString("Buschfeuer")
+    EndTextCommandSetBlipName(bushfireBlip)
+end)
+
+-- Buschfeuer Blip entfernen
+RegisterNetEvent("dynamic_events:removeBushfireBlip")
+AddEventHandler("dynamic_events:removeBushfireBlip", function()
+    if bushfireBlip then
+        RemoveBlip(bushfireBlip)
+        bushfireBlip = nil
+    end
+end)
+
 -- Cleanup beim Resource Stop
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then
@@ -62,6 +87,11 @@ AddEventHandler('onResourceStop', function(resourceName)
             RemoveBlip(blip)
         end
         blizzardBlips = {}
+
+        if bushfireBlip then
+            RemoveBlip(bushfireBlip)
+            bushfireBlip = nil
+        end
     end
 end)
 

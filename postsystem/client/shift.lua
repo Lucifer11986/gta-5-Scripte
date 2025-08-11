@@ -1,47 +1,63 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- Blip für Job-Annahmestelle erstellen
-CreateThread(function()
-    local jobLocation = Config.PostmanJob.JobLocation
-    local blip = AddBlipForCoord(jobLocation.x, jobLocation.y, jobLocation.z)
+local jobNPC = nil
+local npcModel = "s_m_m_postal_01"
 
-    SetBlipSprite(blip, 408) -- Brief-Symbol
-    SetBlipColour(blip, 2) -- Grün
+-- Funktion zum Spawnen des Job-NPCs und des Blips
+local function setupJobLocation()
+    local jobLocation = Config.PostmanJob.JobLocation
+    
+    -- Blip
+    local blip = AddBlipForCoord(jobLocation.x, jobLocation.y, jobLocation.z)
+    SetBlipSprite(blip, 408)
+    SetBlipColour(blip, 2)
     SetBlipScale(blip, 0.8)
     SetBlipAsShortRange(blip, true)
-
     BeginTextCommandSetBlipName("STRING")
     AddTextComponentString("Postboten-Job")
     EndTextCommandSetBlipName(blip)
-end)
+
+    -- NPC
+    RequestModel(GetHashKey(npcModel))
+    while not HasModelLoaded(GetHashKey(npcModel)) do Wait(10) end
+    jobNPC = CreatePed(4, GetHashKey(npcModel), jobLocation.x, jobLocation.y, jobLocation.z - 1.0, jobLocation.heading, false, true)
+    FreezeEntityPosition(jobNPC, true)
+    SetEntityInvincible(jobNPC, true)
+    SetBlockingOfNonTemporaryEvents(jobNPC, true)
+end
 
 -- Interaktionspunkt für Schichtsystem
 CreateThread(function()
+    setupJobLocation()
+
     while true do
-        Wait(1000) -- Prüfe jede Sekunde
+        local wait = 1000
+        if jobNPC then
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local npcCoords = GetEntityCoords(jobNPC)
+            local distance = #(playerCoords - npcCoords)
 
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        local jobLocation = Config.PostmanJob.JobLocation
-        local distance = #(playerCoords - vector3(jobLocation.x, jobLocation.y, jobLocation.z))
-
-        if distance < 10.0 then -- Nur zeichnen, wenn in der Nähe
-            DrawMarker(1, jobLocation.x, jobLocation.y, jobLocation.z - 0.98, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 1.0, 255, 255, 0, 100, false, true, 2, nil, nil, false)
-
-            if distance < 1.5 then
-                local playerJob = ESX.GetPlayerData().job
-                if playerJob and playerJob.name == Config.PostmanJob.JobName then
-                    ESX.ShowHelpNotification("Drücke [E], um deine Schicht zu beenden.")
-                    if IsControlJustReleased(0, 38) then -- E
-                        TriggerServerEvent('postsystem:endPostmanShift')
+            if distance < 5.0 then
+                wait = 5 -- Loop faster when near
+                if distance < 1.5 then
+                    local playerJob = ESX.GetPlayerData().job
+                    if playerJob and playerJob.name == Config.PostmanJob.JobName then
+                        ESX.ShowHelpNotification("Drücke [E], um deine Schicht zu beenden.")
+                    else
+                        ESX.ShowHelpNotification("Drücke [E], um als Postbote zu arbeiten.")
                     end
-                else
-                    ESX.ShowHelpNotification("Drücke [E], um als Postbote zu arbeiten.")
+
                     if IsControlJustReleased(0, 38) then -- E
-                        TriggerServerEvent('postsystem:startPostmanShift')
+                        if playerJob and playerJob.name == Config.PostmanJob.JobName then
+                            TriggerServerEvent('postsystem:endPostmanShift')
+                        else
+                            TriggerServerEvent('postsystem:startPostmanShift')
+                        end
                     end
                 end
             end
         end
+        Wait(wait)
     end
 end)
 

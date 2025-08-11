@@ -1,76 +1,73 @@
 ESX = exports["es_extended"]:getSharedObject()
 
-local isFreezing = false
+local pendingCallbacks = {}
 
-function isWearingWarmClothes()
-    local playerPed = PlayerPedId()
-    local jacketId = GetPedDrawableVariation(playerPed, 11)
-    if Config.WarmClothing.jackets[jacketId] then
-        return true
+-- Event vom Client mit Ergebnis
+RegisterNetEvent('survival:responseIsWearingWarmClothes')
+AddEventHandler('survival:responseIsWearingWarmClothes', function(isWearingWarm)
+    local src = source
+    if pendingCallbacks[src] then
+        pendingCallbacks[src](isWearingWarm)
+        pendingCallbacks[src] = nil
     end
-    return false
-end
+end)
 
-function isSheltered()
-    local playerPed = PlayerPedId()
-    if GetInteriorFromEntity(playerPed) ~= 0 then
-        return true
-    end
-    if IsPedInAnyVehicle(playerPed, false) then
-        local vehicle = GetVehiclePedIsIn(playerPed, false)
-        local vehicleClass = GetVehicleClass(vehicle)
-        if vehicleClass == 8 or vehicleClass == 13 or vehicleClass == 14 or vehicleClass == 15 or vehicleClass == 16 then
-            return false
-        else
-            return true
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(Config.Survival.CheckIntervalSeconds * 1000)
+        local currentTemperature = exports.weather_seasons:GetCurrentTemperature()
+
+        local players = ESX.GetPlayers()
+
+        for i = 1, #players do
+            local playerId = players[i]
+            local xPlayer = ESX.GetPlayerFromId(playerId)
+            if xPlayer then
+                -- Anfrage an Client senden und Callback speichern
+                local cbDone = false
+                pendingCallbacks[playerId] = function(isWearingWarm)
+                    cbDone = true
+
+                    -- Hitze-Logik
+                    if currentTemperature >= Config.Survival.HotTemperature then
+                        local multiplier = 1.0
+                        if isWearingWarm then
+                            multiplier = Config.Survival.ClothingMultiplier
+                        end
+
+                        local thirst = xPlayer.get('thirst')
+                        xPlayer.set('thirst', math.max(thirst - (Config.Survival.ThirstRate * multiplier), 0))
+
+                        if thirst <= 0 then
+                            TriggerClientEvent('survival:applyDamage', playerId, Config.Survival.HeatDamage)
+                            TriggerClientEvent('esx:showNotification', playerId, 'Du leidest an einem Hitzschlag! Finde schnell Wasser!')
+                        end
+
+                    -- Kälte-Logik
+                    elseif currentTemperature <= Config.Survival.ColdTemperature then
+                        if not isWearingWarm then
+                            TriggerClientEvent('survival:applyDamage', playerId, Config.Survival.FreezingDamage)
+                            TriggerClientEvent('esx:showNotification', playerId, 'Dir ist eiskalt! Zieh dir etwas Warmes an!')
+                            TriggerClientEvent('survival:setFreezingEffect', playerId, true)
+                        else
+                            TriggerClientEvent('survival:setFreezingEffect', playerId, false)
+                        end
+
+                    else
+                        TriggerClientEvent('survival:setFreezingEffect', playerId, false)
+                    end
+                end
+
+                -- Client anfragen
+                TriggerClientEvent('survival:requestIsWearingWarmClothes', playerId)
+
+                -- Timeout fallback (z.B. nach 1 Sekunde ohne Antwort)
+                Citizen.Wait(1000)
+                if not cbDone then
+                    -- Falls kein Callback, Behandlung hier (evtl Annahme false)
+                    pendingCallbacks[playerId] = nil
+                end
+            end
         end
     end
-    return false
-end
-
-RegisterNetEvent('survival:checkClothingAndApplyEffects')
-AddEventHandler('survival:checkClothingAndApplyEffects', function(temperature)
-    local isWarm = isWearingWarmClothes()
-    local sheltered = isSheltered()
-    TriggerServerEvent('survival:applyEffects', isWarm, sheltered, temperature)
 end)
-
-RegisterNetEvent('survival:setFreezingEffect')
-AddEventHandler('survival:setFreezingEffect', function(shouldBeFreezing)
-    if shouldBeFreezing and not isFreezing then
-        isFreezing = true
-        SetTimecycleModifier("hud_def_colorgrade_ice")
-        SetTimecycleModifierStrength(0.4)
-    elseif not shouldBeFreezing and isFreezing then
-        isFreezing = false
-        ClearTimecycleModifier()
-    end
-end)
-
-RegisterNetEvent('survival:applyDamage')
-AddEventHandler('survival:applyDamage', function(damage)
-    local playerPed = PlayerPedId()
-    local currentHealth = GetEntityHealth(playerPed)
-    SetEntityHealth(playerPed, currentHealth - damage)
-end)
-
-RegisterNetEvent('season:notifySeasonChange')
-AddEventHandler('season:notifySeasonChange', function(seasonName)
-    local title = "Die Jahreszeit hat gewechselt"
-    local message = "Willkommen im ~y~" .. seasonName .. "~s~!"
-    local icon = "CHAR_CALENDAR"
-    ESX.ShowAdvancedNotification(title, "Wetter-Update", message, icon, 1)
-end)
-
-RegisterCommand('myclothes', function()
-    local playerPed = PlayerPedId()
-    print("--- Aktuelle Kleidung ---")
-    local components = {3, 4, 8, 11} 
-    for _, componentId in ipairs(components) do
-        local drawableId = GetPedDrawableVariation(playerPed, componentId)
-        local textureId = GetPedTextureVariation(playerPed, componentId)
-        print("Component " .. componentId .. ": Drawable = " .. drawableId .. ", Texture = " .. textureId)
-    end
-    print("-------------------------")
-    ESX.ShowNotification("Deine aktuellen Kleidungs-IDs wurden in der F8-Konsole ausgegeben.")
-end, false)

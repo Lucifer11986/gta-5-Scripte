@@ -6,8 +6,9 @@ if not vector3 then
     end
 end
 
-Config.SeasonDurationSeconds = 600
-Config.TemperatureChangeIntervalMinutes = 15
+-- Jahreszeiten & Temperaturen
+Config.SeasonDurationSeconds = 600 -- Dauer einer Jahreszeit in Sekunden
+Config.TemperatureChangeIntervalMinutes = 15 -- Temperaturänderungsintervall
 
 Config.Seasons = {
     {name = "Frühling", min_temp = 8,  max_temp = 18},
@@ -15,8 +16,9 @@ Config.Seasons = {
     {name = "Herbst",   min_temp = 10, max_temp = 20},
     {name = "Winter",   min_temp = -10, max_temp = 5}
 }
-Config.HeatwaveTemperature = 30
+Config.HeatwaveTemperature = 30 -- Hitzeperiode ab dieser Temperatur
 
+-- Beispiel-Event-Orte (Ostereier)
 Config.EggLocations = {
     [1] = vector3(214.9390, -807.937, 31.014), 
     [2] = vector3(218.6911, -934.990, 28.652), 
@@ -70,90 +72,110 @@ Config.EggLocations = {
     [50] = vector3(-544.391, 5367.270, 70.549)
 }
 
+-- Survival-Einstellungen
 Config.Survival = {
-    CheckIntervalSeconds = 30,
-    HotTemperature = 28,
-    ThirstRate = 4000,
-    HeatDamage = 5,
-    ClothingMultiplier = 1.5,
-    ColdTemperature = 0,
-    FreezingDamage = 3
+    CheckIntervalSeconds = 30, -- Überprüfungsintervall
+    HotTemperature = 28,       -- Schwelle für Hitze
+    ThirstRate = 4000,         -- Durst-Rate
+    HeatDamage = 5,            -- Schaden bei Hitze
+    ClothingMultiplier = 1.5,  -- Multiplikator wenn warme Kleidung bei Hitze
+    ColdTemperature = 0,       -- Schwelle für Kälte
+    FreezingDamage = 3         -- Schaden bei Kälte
 }
 
+-- Warme Kleidung (IDs)
 Config.WarmClothing = {
-    jackets = { [15]=true, [25]=true, [26]=true, [31]=true, [32]=true, [33]=true, [47]=true, [50]=true, [51]=true, [55]=true, [69]=true, [94]=true, [121]=true, [124]=true, [131]=true },
+    jackets = {
+        [15] = true, [25] = true, [26] = true, [31] = true, [32] = true, [33] = true,
+        [47] = true, [50] = true, [51] = true, [55] = true, [69] = true, [94] = true,
+        [121] = true, [124] = true, [131] = true
+    },
     pants = {}
 }
 
+-- Herbst-Event
 Config.AutumnEvent = {
     Enabled = true,
     DurationDays = 7,
     PumpkinLocations = {
         vector3(214.9, -807.9, 31.0),
         vector3(218.6, -934.9, 28.6),
-        vector3(285.1, -985.7, 47.8),
+        vector3(285.1, -985.7, 47.8)
     },
     Rewards = {
-        common = { {type="item", name="pumpkin_pie", amount=1}, {type="money", amount={min=100, max=250}} },
-        rare = { {type="item", name="scary_mask", amount=1}, {type="money", amount={min=500, max=1000}} },
-        very_rare = { {type="item", name="rare_halloween_vehicle_key", amount=1}, {type="money", amount={min=5000, max=10000}} }
+        common = {
+            {type = "item", name = "pumpkin_pie", amount = 1},
+            {type = "money", amount = {min = 100, max = 250}}
+        },
+        rare = {
+            {type = "item", name = "scary_mask", amount = 1},
+            {type = "money", amount = {min = 500, max = 1000}}
+        },
+        very_rare = {
+            {type = "item", name = "rare_halloween_vehicle_key", amount = 1},
+            {type = "money", amount = {min = 5000, max = 10000}}
+        }
     },
-    RewardProbabilities = {common=70, rare=25, very_rare=5}
+    RewardProbabilities = {common = 70, rare = 25, very_rare = 5}
 }
 
+-- Winter-Event
 Config.WinterEvent = {
     Enabled = true,
     DurationDays = 7,
     PresentLocations = {
         vector3(-80.0, -823.7, 320.3),
         vector3(-235.5, -2003.0, 23.7),
-        vector3(29.9, -1353.4, 29.3),
+        vector3(29.9, -1353.4, 29.3)
     },
     Rewards = {
-        common = { {type="item", name="hot_chocolate", amount=1}, {type="money", amount={min=100, max=250}} },
-        rare = { {type="item", name="christmas_sweater", amount=1}, {type="money", amount={min=500, max=1000}} },
-        very_rare = { {type="item", name="rare_winter_vehicle_key", amount=1}, {type="money", amount={min=5000, max=10000}} }
+        common = {
+            {type = "item", name = "hot_chocolate", amount = 1},
+            {type = "money", amount = {min = 100, max = 250}}
+        },
+        rare = {
+            {type = "item", name = "christmas_sweater", amount = 1},
+            {type = "money", amount = {min = 500, max = 1000}}
+        },
+        very_rare = {
+            {type = "item", name = "rare_winter_vehicle_key", amount = 1},
+            {type = "money", amount = {min = 5000, max = 10000}}
+        }
     },
-    RewardProbabilities = {common=70, rare=25, very_rare=5}
+    RewardProbabilities = {common = 70, rare = 25, very_rare = 5}
 }
 
+-- Dynamische Events (inkl. Glatteis)
 Config.DynamicEvents = {
-    CheckIntervalMinutes = 5,
+    CheckIntervalMinutes = 5, -- Prüfintervall für Zufallsevents
     PowerOutage = {
-        Chance = 0.20,
+        Chance = 0.20, -- 20% Chance
         DurationMinutes = {min = 3, max = 8},
         Locations = {
-            {name="Rockford Hills", coords=vector3(-816.0, 178.0, 72.0), radius=300.0},
-            {name="Vinewood", coords=vector3(230.0, 185.0, 105.0), radius=250.0},
+            {name = "Rockford Hills", coords = vector3(-816.0, 178.0, 72.0), radius = 300.0},
+            {name = "Vinewood", coords = vector3(230.0, 185.0, 105.0), radius = 250.0}
         }
     },
     Bushfire = {
         Chance = 0.15,
         Locations = {
             vector3(2450.0, 4970.0, 46.0),
-            vector3(-1500.0, 4600.0, 40.0),
+            vector3(-1500.0, 4600.0, 40.0)
         }
     },
     Blizzard = {
         Chance = 0.30,
         BlockedRoads = {
-            {name="Great Ocean Highway", coords=vector3(-2400.0, 2400.0, 10.0)},
-            {name="Paleto Bay", coords=vector3(150.0, 6600.0, 31.0)},
+            {name = "Great Ocean Highway", coords = vector3(-2400.0, 2400.0, 10.0)},
+            {name = "Paleto Bay", coords = vector3(150.0, 6600.0, 31.0)}
         }
-    }
-}
-
-Config.SnowChains = {
-    ItemName = "snow_chains",
-    DurabilityMinutes = 60,
-    OffSeasonTireDamage = true,
-    RequiredChains = {
-        [0] = 4, [1] = 4, [2] = 4, [3] = 4, [4] = 4, [5] = 4, [6] = 4, [7] = 4,
-        [8] = 2,
-        [9] = 4, [10] = 4, [11] = 4, [12] = 4, [13] = 0,
-        [14] = 0, [15] = 0, [16] = 0, [17] = 4,
-        [18] = 6,
-        [19] = 6, [20] = 6,
-        [21] = 0, [22] = 0
+    },
+    Glatteis = {
+        Chance = 0.25, -- 25% Wahrscheinlichkeit bei Event-Check
+        MinTemp = 0, -- Nur aktiv wenn Temperatur unter 0°C
+        DurationMinutes = {min = 5, max = 30}, -- Dauer des Events
+        GripReduction = 0.5, -- Haftungsverlust (0.5 = 50% weniger Grip)
+        AnnouncementStart = "⚠ Achtung! Glatteis auf den Straßen – fahrt vorsichtig!",
+        AnnouncementEnd = "✅ Das Glatteis ist verschwunden, Straßen wieder sicher."
     }
 }

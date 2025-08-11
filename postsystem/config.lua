@@ -6,7 +6,7 @@ Config.Debug = true
 -- Poststationen
 Config.PostStations = {
     {x = -422.7484, y = 6136.3213, z = 30.8773, heading = 229.2832, name = "Paleto Post Office"},
-    {x = 1704.1533, y = 3779.5806, z = 33.7553, heading = 208.1156, name = "Sandy Post Office"},
+    {x = 1704.1533, y = 3779.5806, z = 33.7553, heading = 208.1156, name = "Sandy Post Office"},  
     {x = 380.5149, y = -833.3210, z = 28.2917, heading = 176.3530, name = "City Post Office"}
 }
 
@@ -45,9 +45,9 @@ Config.PostmanJob = {
     Salary = 500,
     MaxDeliveries = 10,
     DeliveryTime = 300,
-
+    
     JobLocation = {
-        x = 399.8, y = -847.4, z = 29.4
+        x = 382.0, y = -830.0, z = 29.3, heading = 260.0
     },
 
     Uniform = {

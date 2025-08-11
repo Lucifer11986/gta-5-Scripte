@@ -1,48 +1,20 @@
-ESX = exports["es_extended"]:getSharedObject()
+ESX = exports['es_extended']:getSharedObject()
 
 local isFreezing = false
 
-function isWearingWarmClothes()
+local function isWearingWarmClothes()
     local playerPed = PlayerPedId()
     local jacketId = GetPedDrawableVariation(playerPed, 11)
-    if Config.WarmClothing.jackets[jacketId] then
+    if Config.WarmClothing and Config.WarmClothing.jackets and Config.WarmClothing.jackets[jacketId] then
         return true
     end
     return false
 end
 
--- NEU: Funktion, um zu prüfen, ob der Spieler geschützt ist
-function isSheltered()
-    local playerPed = PlayerPedId()
-
-    -- Prüfe, ob Spieler in einem Interior ist
-    if GetInteriorFromEntity(playerPed) ~= 0 then
-        return true
-    end
-
-    -- Prüfe, ob Spieler in einem Fahrzeug ist (aber nicht Motorrad)
-    if IsPedInAnyVehicle(playerPed, false) then
-        local vehicle = GetVehiclePedIsIn(playerPed, false)
-        local vehicleClass = GetVehicleClass(vehicle)
-        
-        -- Klassen 8 (Motorräder), 13 (Fahrräder), 14 (Boote), 15 (Helis), 16 (Flugzeuge) bieten keinen Schutz
-        if vehicleClass == 8 or vehicleClass == 13 or vehicleClass == 14 or vehicleClass == 15 or vehicleClass == 16 then
-            return false
-        else
-            return true
-        end
-    end
-
-    return false -- Nicht geschützt
-end
-
--- Server fordert den Client auf, den Status zu prüfen
-RegisterNetEvent('survival:checkClothingAndApplyEffects')
-AddEventHandler('survival:checkClothingAndApplyEffects', function(temperature)
-    local isWarm = isWearingWarmClothes()
-    local sheltered = isSheltered()
-    -- Sende beide Informationen zurück an den Server
-    TriggerServerEvent('survival:applyEffects', isWarm, sheltered, temperature)
+RegisterNetEvent('survival:requestIsWearingWarmClothes')
+AddEventHandler('survival:requestIsWearingWarmClothes', function()
+    local warm = isWearingWarmClothes()
+    TriggerServerEvent('survival:responseIsWearingWarmClothes', warm)
 end)
 
 -- Event, um den visuellen Frier-Effekt zu steuern
@@ -63,7 +35,7 @@ RegisterNetEvent('survival:applyDamage')
 AddEventHandler('survival:applyDamage', function(damage)
     local playerPed = PlayerPedId()
     local currentHealth = GetEntityHealth(playerPed)
-    SetEntityHealth(playerPed, currentHealth - damage)
+    SetEntityHealth(playerPed, math.max(currentHealth - damage, 0))
 end)
 
 -- Event für die große Benachrichtigung beim Jahreszeitenwechsel
