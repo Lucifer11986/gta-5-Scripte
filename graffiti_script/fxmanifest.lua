@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'Lucifer | Awaria Modding - Modified by Jules'
+author 'AbyssForge Studio'
 description 'Graffiti-Script'
 version '1.1.0'
 
