@@ -1,29 +1,20 @@
+-- This table stores the placed graffiti in the world.
+-- The schema is updated to match the data being sent from graffiti_management.lua
 CREATE TABLE IF NOT EXISTS `graffiti` (
     `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `player_id` VARCHAR(50) NOT NULL,
-    `motif` VARCHAR(100) NOT NULL,
     `x` FLOAT NOT NULL,
     `y` FLOAT NOT NULL,
     `z` FLOAT NOT NULL,
-    `color` VARCHAR(255) NOT NULL,
+    `heading` FLOAT NOT NULL,
+    `color` VARCHAR(50) NOT NULL,
+    `image` VARCHAR(100) NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Spraydosen als Item
-CREATE TABLE IF NOT EXISTS `items` (
-    `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(100) NOT NULL,
-    `label` VARCHAR(100) NOT NULL,
-    `weight` INT NOT NULL,
-    `quantity` INT NOT NULL,
-    `type` VARCHAR(100) NOT NULL
-);
-
-INSERT INTO `items` (`name`, `label`, `weight`, `quantity`, `type`) VALUES
-('spray_can', 'Sprühdose', 1, 1, 'item');
-
-
-INSERT INTO items (name, label, weight, rare, can_remove) VALUES
+-- This table adds the spray can items to the database for ESX.
+-- The schema has been consolidated to the standard ESX format.
+-- The old, incorrect CREATE TABLE and INSERT statements have been removed.
+INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
 ('spraycan_red', 'Rote Spraydose', 1, 0, 1),
 ('spraycan_blue', 'Blaue Spraydose', 1, 0, 1),
 ('spraycan_green', 'Grüne Spraydose', 1, 0, 1),
