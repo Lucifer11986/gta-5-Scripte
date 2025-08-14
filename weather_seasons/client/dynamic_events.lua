@@ -37,6 +37,35 @@ AddEventHandler("dynamic_events:blizzardEnd", function()
     blizzardBlips = {}
 end)
 
+local bushfireBlip = nil
+
+-- Buschfeuer-Event
+RegisterNetEvent("dynamic_events:bushfire")
+AddEventHandler("dynamic_events:bushfire", function(location)
+    -- Entferne alten Blip, falls vorhanden
+    if bushfireBlip and DoesBlipExist(bushfireBlip) then
+        RemoveBlip(bushfireBlip)
+    end
+
+    -- Erstelle neuen Blip
+    bushfireBlip = AddBlipForCoord(location.x, location.y, location.z)
+    SetBlipSprite(bushfireBlip, 436) -- Fire icon
+    SetBlipColour(bushfireBlip, 1)   -- Red
+    SetBlipScale(bushfireBlip, 1.5)
+    SetBlipAsShortRange(bushfireBlip, false)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString("Buschfeuer")
+    EndTextCommandSetBlipName(bushfireBlip)
+end)
+
+RegisterNetEvent("dynamic_events:bushfireEnd")
+AddEventHandler("dynamic_events:bushfireEnd", function()
+    if bushfireBlip and DoesBlipExist(bushfireBlip) then
+        RemoveBlip(bushfireBlip)
+    end
+    bushfireBlip = nil
+end)
+
 -- Ensure lights are on when the script stops/restarts
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then

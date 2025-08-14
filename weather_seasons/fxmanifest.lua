@@ -26,13 +26,14 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/weather_seasons.lua',
+    -- 'server/weather_seasons.lua', -- DEAKTIVIERT, da es mit server.lua konfliktiert
     'server/survival_effects.lua',
     'server/dynamic_events.lua',
     'server/vehicle_mods.lua',
     'server/oster_event.lua',
     'server/autumn_event.lua',
     'server/winter_event.lua',
+    'server/items.lua', -- Schneeketten-Logik
     -- 'server/season_events.lua', -- DEAKTIVIERT
     'server/sommer_events.lua',
 	'server/sommermarkt.lua',

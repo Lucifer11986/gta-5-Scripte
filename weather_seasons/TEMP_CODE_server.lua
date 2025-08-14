@@ -30,7 +30,7 @@ Citizen.CreateThread(function()
 
         saveServerState()
 
-        TriggerClientEvent('season:updateSeason', -1, seasonData.name, currentTemperature)
+        TriggerClientEvent('weather_seasons:updateSeason', -1, seasonData, currentTemperature)
         print("[Weather Seasons] Jahreszeit geändert zu: " .. seasonData.name)
     end
 
@@ -53,7 +53,7 @@ Citizen.CreateThread(function()
     RegisterNetEvent('weather_seasons:requestSync', function()
         local src = source
         local seasonData = Config.Seasons[currentSeasonIndex]
-        TriggerClientEvent('season:updateSeason', src, seasonData.name, currentTemperature)
+        TriggerClientEvent('weather_seasons:updateSeason', src, seasonData, currentTemperature)
     end)
 
     -- Initialen Server-Status laden
