@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'AbyssForge Studio'
+author 'Lucifer | Awaria Modding - Modified by Jules'
 description 'Graffiti-Script'
 version '1.1.0'
 
@@ -30,7 +30,8 @@ client_scripts {
     'client/blackmarket.lua',
     'client/shop.lua',
     'client/cleanup.lua',
-    'client/spray_ui.lua' -- Added UI script
+    'client/spray_ui.lua', -- Added UI script
+    'client/police.lua' -- Added police system script
 }
 
 server_scripts {
