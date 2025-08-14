@@ -17,9 +17,11 @@ Config.MaxSprayCans = 10
 -- Anti-Spam: Mindestabstand zwischen zwei Graffitis (in Metern)
 Config.MinDistanceBetweenGraffiti = 5.0
 
+
 -- Zeit in Sekunden, nach der ein Graffiti automatisch verschwindet.
 -- Setze auf 0, damit Graffitis nie von alleine verschwinden.
 Config.GraffitiFadeTime = 24 * 3600 -- 24 Stunden
+
 
 -- Farboptionen für Spraydosen
 Config.Colors = {
