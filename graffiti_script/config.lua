@@ -14,6 +14,9 @@ Config.BlackMarketPrices = {
 -- Maximale Anzahl an Spraydosen im Inventar
 Config.MaxSprayCans = 10
 
+-- Anti-Spam: Mindestabstand zwischen zwei Graffitis (in Metern)
+Config.MinDistanceBetweenGraffiti = 5.0
+
 -- Farboptionen für Spraydosen
 Config.Colors = {
     red = "Rot",

@@ -1,7 +1,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
-author 'Lucifer | Awaria Modding - Modified by Jules'
+author 'AbyssForge Studio'
 description 'Graffiti-Script'
 version '1.1.0'
 
@@ -12,8 +12,12 @@ ui_page 'html/index.html'
 files {
     'html/index.html',
     'html/style.css',
-    'html/script.js'
+    'html/script.js',
+    'assets/graffiti_textures.ytd'
 }
+
+-- Define the texture dictionary
+data_file 'TXD_FILE' 'assets/graffiti_textures.ytd'
 
 shared_scripts {
     'config.lua'
