@@ -34,8 +34,11 @@ Config.SprayTechniques = {
 }
 
 -- Graffiti-Motive
+-- Each motif has a 'name' for the UI and a 'file' for the graffiti texture/decal name.
 Config.Motives = {
-    "Motiv 1",  -- Motiv 1 als Beispiel
-    "Motiv 2",  -- Motiv 2
-    "Motiv 3"   -- Motiv 3
+    { name = "Tribal-Sonne", file = "graffiti_tribal_sun" },
+    { name = "Gasmaske", file = "graffiti_gasmask" },
+    { name = "Rose", file = "graffiti_rose" },
+    { name = "Totenkopf", file = "graffiti_skull" },
+    { name = "East Side", file = "graffiti_eastsid" }
 }

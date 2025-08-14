@@ -1,37 +1,54 @@
+let sprayColor = null; // Will hold the color of the used spray can
+
 window.addEventListener('message', function(event) {
-    if (event.data.action === "showMotifs") {
-        const motifs = event.data.motifs;
+    const item = event.data;
+    if (item.action === "show") {
+        const motifs = item.motifs;
+        sprayColor = item.color; // Store the color
         const motifList = document.getElementById('motif-list');
-        motifList.innerHTML = '';
+        motifList.innerHTML = ''; // Clear previous list
 
-        for (let category in motifs) {
-            const categoryHeader = document.createElement('h2');
-            categoryHeader.innerText = category;
-            motifList.appendChild(categoryHeader);
+        // Motifs are now a simple array of objects
+        motifs.forEach(motif => {
+            const motifItem = document.createElement('div');
+            motifItem.classList.add('motif-item');
+            motifItem.innerText = motif.name; // Display name
 
-            motifs[category].forEach(motif => {
-                const motifItem = document.createElement('div');
-                motifItem.classList.add('motif-item');
-                motifItem.innerText = motif.name;
-                motifItem.onclick = function() {
-                    const colors = prompt('Welche Farben möchtest du verwenden? (Komma getrennt)');
-                    if (colors) {
-                        const colorsArray = colors.split(',');
-                        fetch(`https://${GetParentResourceName()}/selectMotif`, {
-                            method: 'POST',
-                            body: JSON.stringify({ motif: motif.file, colors: colorsArray })
-                        });
-                    }
-                };
-                motifList.appendChild(motifItem);
-            });
-        }
+            motifItem.onclick = function() {
+                // When a motif is selected, send the motif file and the stored color back to Lua
+                fetch(`https://${GetParentResourceName()}/selectMotif`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                    body: JSON.stringify({
+                        motif: motif.file, // Send the file name
+                        color: sprayColor  // Send the stored color
+                    })
+                }).then(() => {
+                    // Hide the UI after selection
+                    document.body.style.display = 'none';
+                });
+            };
+            motifList.appendChild(motifItem);
+        });
+
+        document.body.style.display = 'block'; // Show the UI
     }
 });
 
+// Close button functionality
 document.getElementById('close-btn').onclick = function() {
     fetch(`https://${GetParentResourceName()}/closeUI`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         body: JSON.stringify({})
+    }).then(() => {
+        document.body.style.display = 'none';
     });
 };
+
+// Also close with the Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        document.getElementById('close-btn').click();
+    }
+});
