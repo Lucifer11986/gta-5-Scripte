@@ -14,7 +14,7 @@ local function placeDecal(graffitiData)
     -- Create the decal
     local decal = AddDecal(247, graffitiData.x, graffitiData.y, graffitiData.z, 0.0, 0.0, graffitiData.heading, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, false, false, false)
     SetDecalTexture(decal, graffitiTextureDict, graffitiData.image)
-
+    
     -- Store the decal handle and data
     table.insert(createdGraffiti, {
         decal = decal,
@@ -40,7 +40,7 @@ RegisterNetEvent('graffiti:applySpray')
 AddEventHandler('graffiti:applySpray', function(motif, color)
     local playerPed = PlayerPedId()
     local playerCoords = GetEntityCoords(playerPed)
-
+    
     -- Raycast to find a wall in front of the player
     local offset = GetEntityForwardVector(playerPed) * 1.5
     local rayStart = playerCoords + vector3(0.0, 0.0, 0.5)
@@ -62,7 +62,7 @@ AddEventHandler('graffiti:applySpray', function(motif, color)
                 end
             end
         end
-
+        
         TriggerServerEvent('graffiti:saveGraffiti', endCoords, heading, color, motif, graffitiToOverwrite)
     else
         ESX.ShowNotification("Keine Wand zum Besprühen gefunden!")
