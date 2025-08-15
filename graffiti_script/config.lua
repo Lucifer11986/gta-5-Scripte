@@ -21,6 +21,20 @@ Config.MinDistanceBetweenGraffiti = 5.0
 -- Setze auf 0, damit Graffitis nie von alleine verschwinden.
 Config.GraffitiFadeTime = 24 * 3600 -- 24 Stunden
 
+-- Polizei-System Einstellungen
+Config.PoliceSystem = {
+    Enable = true, -- Soll das System aktiv sein?
+    MinPoliceRequired = 2, -- Wie viele Polizisten müssen im Dienst sein?
+    AlertChance = 0.3, -- 30% Chance auf einen Alarm
+    BlipSprite = 1, -- Das Icon des Blips auf der Karte
+    BlipColour = 1, -- Die Farbe des Blips (1 = Rot)
+    BlipScale = 1.0, -- Die Größe des Blips
+    BlipDuration = 60 -- Zeit in Sekunden, wie lange der Blip sichtbar ist
+}
+
+-- Graffiti-Kriege Einstellungen
+Config.EnableGraffitiWars = true -- Erlaubt das Übersprühen von anderen Graffitis
+
 -- Farboptionen für Spraydosen
 Config.Colors = {
     red = "Rot",
@@ -48,15 +62,4 @@ Config.Motives = {
     { name = "Rose", file = "graffiti_rose" },
     { name = "Totenkopf", file = "graffiti_skull" },
     { name = "East Side", file = "graffiti_eastsid" }
-}
-
--- Polizei-System Einstellungen
-Config.PoliceSystem = {
-    Enable = true, -- Soll das System aktiv sein?
-    MinPoliceRequired = 2, -- Wie viele Polizisten müssen im Dienst sein?
-    AlertChance = 0.3, -- 30% Chance auf einen Alarm
-    BlipSprite = 1, -- Das Icon des Blips auf der Karte
-    BlipColour = 1, -- Die Farbe des Blips (1 = Rot)
-    BlipScale = 1.0, -- Die Größe des Blips
-    BlipDuration = 60 -- Zeit in Sekunden, wie lange der Blip sichtbar ist
 }

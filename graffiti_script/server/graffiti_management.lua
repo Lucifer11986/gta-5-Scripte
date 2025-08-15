@@ -49,29 +49,34 @@ end)
 
 -- Graffiti in der Datenbank speichern
 RegisterNetEvent('graffiti:saveGraffiti')
-AddEventHandler('graffiti:saveGraffiti', function(x, y, z, heading, sprayColor, image)
+AddEventHandler('graffiti:saveGraffiti', function(newGraffitiCoords, heading, sprayColor, image, graffitiToOverwrite)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     if not xPlayer then return end
 
-    local newGraffitiCoords = vector3(x, y, z)
-    local isTooClose = false
-    for _, existingGraffiti in ipairs(LoadedGraffiti) do
-        if #(newGraffitiCoords - vector3(existingGraffiti.x, existingGraffiti.y, existingGraffiti.z)) < Config.MinDistanceBetweenGraffiti then
-            isTooClose = true
-            break
+    -- If this is an overwrite, remove the old graffiti first
+    if Config.EnableGraffitiWars and graffitiToOverwrite then
+        removeGraffiti(graffitiToOverwrite, nil) -- No notification for the removal part of an overwrite
+    else
+        -- If not an overwrite, perform Anti-Spam Check
+        local isTooClose = false
+        for _, existingGraffiti in ipairs(LoadedGraffiti) do
+            if #(newGraffitiCoords - vector3(existingGraffiti.x, existingGraffiti.y, existingGraffiti.z)) < Config.MinDistanceBetweenGraffiti then
+                isTooClose = true
+                break
+            end
+        end
+
+        if isTooClose then
+            return TriggerClientEvent('esx:showNotification', src, "Du kannst hier kein Graffiti sprühen, es ist zu nah an einem anderen.")
         end
     end
 
-    if isTooClose then
-        return TriggerClientEvent('esx:showNotification', src, "Du kannst hier kein Graffiti sprühen, es ist zu nah an einem anderen.")
-    end
-
     MySQL:execute("INSERT INTO graffiti (x, y, z, heading, color, image) VALUES (?, ?, ?, ?, ?, ?)", {
-        x, y, z, heading, sprayColor, image
+        newGraffitiCoords.x, newGraffitiCoords.y, newGraffitiCoords.z, heading, sprayColor, image
     }, function(rowsChanged)
         if rowsChanged > 0 then
-            local newGraffiti = {x = x, y = y, z = z, heading = heading, color = sprayColor, image = image, created_at_unix = os.time()}
+            local newGraffiti = {x = newGraffitiCoords.x, y = newGraffitiCoords.y, z = newGraffitiCoords.z, heading = heading, color = sprayColor, image = image, created_at_unix = os.time()}
             table.insert(LoadedGraffiti, newGraffiti)
             TriggerClientEvent('graffiti:loadGraffiti', -1, newGraffiti)
             TriggerClientEvent('esx:showNotification', src, "Graffiti erfolgreich gesprüht!")
