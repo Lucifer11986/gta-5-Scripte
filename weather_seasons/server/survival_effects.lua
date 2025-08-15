@@ -3,7 +3,7 @@ ESX = exports["es_extended"]:getSharedObject()
 -- Haupt-Schleife, die den Client zur Überprüfung auffordert
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(Config.Survival.CheckInterval * 1000)
+        Citizen.Wait(Config.Survival.CheckIntervalSeconds * 1000)
 
         local players = ESX.GetPlayers()
         for i = 1, #players do

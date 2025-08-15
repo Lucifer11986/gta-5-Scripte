@@ -76,7 +76,9 @@ AddEventHandler('season:updateSeason', function(seasonName, temperature)
     end
 end)
 
-AddEventHandler("weather_seasons:initialized", function()
+CreateThread(function()
+    -- Kurze Verzögerung, um sicherzustellen, dass das Hauptskript die Jahreszeit geladen hat
+    Wait(5000)
     if exports.weather_seasons:GetCurrentSeason() == "Winter" then
         StartWinterEvent()
     end

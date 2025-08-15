@@ -8,7 +8,7 @@ end
 
 -- Jahreszeiten & Temperaturen
 Config.SeasonDurationSeconds = 600 -- Dauer einer Jahreszeit in Sekunden
-Config.TemperatureChangeIntervalMinutes = 3 -- Temperaturänderungsintervall
+Config.TemperatureChangeIntervalMinutes = 15 -- Temperaturänderungsintervall
 
 Config.Seasons = {
     {name = "Frühling", min_temp = 8,  max_temp = 18},

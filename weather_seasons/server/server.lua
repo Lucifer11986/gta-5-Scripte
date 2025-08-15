@@ -8,6 +8,15 @@ Citizen.CreateThread(function()
 
     local currentSeasonIndex = 1
     local currentTemperature = 20
+    local currentWeather = "CLEAR" -- Wetter-Variable hinzugefügt
+
+    -- Wetter-Typen pro Jahreszeit
+    local weatherForSeason = {
+        ["Frühling"] = {"CLEAR", "EXTRASUNNY", "CLOUDS", "RAIN", "FOGGY"},
+        ["Sommer"] = {"EXTRASUNNY", "CLEAR", "CLOUDS", "THUNDER"},
+        ["Herbst"] = {"CLOUDS", "RAIN", "FOGGY", "THUNDER"},
+        ["Winter"] = {"SNOW", "BLIZZARD", "CLOUDS", "FOGGY"}
+    }
 
     -- Diese Funktion könnte erweitert werden, um den Zustand in einer DB zu speichern
     local function saveServerState()
@@ -19,7 +28,16 @@ Citizen.CreateThread(function()
         currentSeasonIndex = 1
         local seasonData = Config.Seasons[currentSeasonIndex]
         currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
+        currentWeather = weatherForSeason[seasonData.name][math.random(#weatherForSeason[seasonData.name])]
         print("[Weather Seasons] Standard-Jahreszeit geladen: " .. seasonData.name)
+    end
+
+    -- Funktion zum Wechseln des Wetters
+    function changeWeather()
+        local seasonName = Config.Seasons[currentSeasonIndex].name
+        currentWeather = weatherForSeason[seasonName][math.random(#weatherForSeason[seasonName])]
+        TriggerClientEvent('weather:setWeather', -1, currentWeather)
+        print("[Weather Seasons] Wetter geändert zu: " .. currentWeather)
     end
 
     -- Funktion zum Wechseln zur nächsten Jahreszeit
@@ -29,8 +47,10 @@ Citizen.CreateThread(function()
         currentTemperature = math.random(seasonData.min_temp, seasonData.max_temp)
 
         saveServerState()
+        changeWeather() -- Wetter passend zur neuen Jahreszeit ändern
 
         TriggerClientEvent('season:updateSeason', -1, seasonData.name, currentTemperature)
+        TriggerClientEvent('season:notifySeasonChange', -1, seasonData.name)
         print("[Weather Seasons] Jahreszeit geändert zu: " .. seasonData.name)
     end
 
@@ -44,7 +64,6 @@ Citizen.CreateThread(function()
 
     -- Admin-Befehl zum manuellen Wechseln der Jahreszeit
     RegisterCommand("nextseason", function(source, args, rawCommand)
-        -- Hier könnte eine Berechtigungsprüfung für Admins eingefügt werden
         changeSeason()
         print("Admin hat die Jahreszeit manuell gewechselt.")
     end, false)
@@ -54,6 +73,7 @@ Citizen.CreateThread(function()
         local src = source
         local seasonData = Config.Seasons[currentSeasonIndex]
         TriggerClientEvent('season:updateSeason', src, seasonData.name, currentTemperature)
+        TriggerClientEvent('weather:setWeather', src, currentWeather)
     end)
 
     -- Initialen Server-Status laden
@@ -73,5 +93,27 @@ Citizen.CreateThread(function()
             Wait(Config.TemperatureChangeIntervalMinutes * 60 * 1000)
             adjustTemperature()
         end
+    end)
+
+    -- Thread für den automatischen Wechsel des Wetters
+    CreateThread(function()
+        while true do
+            Wait(15 * 60 * 1000) -- Wetter alle 15 Minuten ändern
+            changeWeather()
+        end
+    end)
+
+    -- Exports für andere Skripte
+    exports("GetCurrentSeason", function()
+        return Config.Seasons[currentSeasonIndex].name
+    end)
+    exports("GetCurrentTemperature", function()
+        return currentTemperature
+    end)
+    exports("IsHeatwaveActive", function()
+        return currentTemperature >= Config.HeatwaveTemperature
+    end)
+    exports("GetCurrentWeather", function()
+        return currentWeather
     end)
 end)
