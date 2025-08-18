@@ -1,108 +1,77 @@
-local ESX = exports['es_extended']:getSharedObject()
-local isEventActive = false
-local icyRoadsActive = false
+ESX = exports["es_extended"]:getSharedObject()
 
-function ServerAnnouncement(msg, color)
-    TriggerClientEvent('chat:addMessage', -1, {
-        color = color or {255, 0, 0},
-        multiline = true,
-        args = {"Server", msg}
-    })
-    Citizen.SetTimeout(6000, function()
-        TriggerClientEvent('chat:clear', -1)
-    end)
+math.randomseed(os.time())
+
+local isAutumnEventActive = false local pumpkinModels = { "prop_pumpkin_01" } local foundPumpkins = {}
+
+function getAutumnReward() -- Warte auf die Konfiguration while Config == nil or Config.AutumnEvent == nil do Wait(1000) end
+
+local roll = math.random(1, 100)
+local probs = Config.AutumnEvent.RewardProbabilities
+local rewardTier
+
+if roll <= probs.very_rare then
+    rewardTier = "very_rare"
+elseif roll <= probs.very_rare + probs.rare then
+    rewardTier = "rare"
+else
+    rewardTier = "common"
 end
 
-function StartPowerOutage()
-    isEventActive = true
-    local eventConfig = Config.DynamicEvents.PowerOutage
-    local location = eventConfig.Locations[math.random(#eventConfig.Locations)]
-    local duration = math.random(eventConfig.DurationMinutes.min, eventConfig.DurationMinutes.max) * 60000
-
-    ServerAnnouncement("Ein Gewitter hat einen Stromausfall in " .. location.name .. " verursacht!", {255, 255, 0})
-    TriggerClientEvent("dynamic_events:powerOutage", -1, location.coords, location.radius)
-
-    SetTimeout(duration, function()
-        TriggerClientEvent("dynamic_events:powerRestored", -1)
-        ServerAnnouncement("Der Strom in " .. location.name .. " wurde wiederhergestellt.", {0, 255, 0})
-        isEventActive = false
-    end)
+local rewards = Config.AutumnEvent.Rewards[rewardTier]
+return rewards[math.random(#rewards)]
 end
 
-function StartBushfire()
-    isEventActive = true
-    local eventConfig = Config.DynamicEvents.Bushfire
-    local location = eventConfig.Locations[math.random(#eventConfig.Locations)]
+function getRandomPumpkinLocations(num) local randomLocations = {} while Config == nil or Config.AutumnEvent == nil do Wait(1000) end
 
-    ServerAnnouncement("Ein Buschfeuer ist ausgebrochen! Die Feuerwehr wird alarmiert.", {255, 140, 0})
-    TriggerClientEvent("dynamic_events:startBushfireClient", -1, location.x, location.y, location.z)
-    TriggerClientEvent("dynamic_events:addBushfireBlip", -1, location.x, location.y, location.z)
-
-    SetTimeout(10 * 60000, function()
-        TriggerClientEvent("dynamic_events:removeBushfireBlip", -1)
-        isEventActive = false
-    end)
+local shuffledLocations = {}
+for i, pos in ipairs(Config.AutumnEvent.PumpkinLocations) do
+    table.insert(shuffledLocations, pos)
 end
 
-function StartBlizzard()
-    isEventActive = true
-    local eventConfig = Config.DynamicEvents.Blizzard
-    ServerAnnouncement("Ein Schneesturm führt zu Straßensperrungen!", {173, 216, 230})
-    TriggerClientEvent("dynamic_events:blizzardWarning", -1, eventConfig.BlockedRoads)
-    SetTimeout(10 * 60000, function()
-        TriggerClientEvent("dynamic_events:blizzardEnd", -1)
-        isEventActive = false
-    end)
+for i = #shuffledLocations, 2, -1 do
+    local j = math.random(i)
+    shuffledLocations[i], shuffledLocations[j] = shuffledLocations[j], shuffledLocations[i]
 end
 
-function StartIcyRoads()
-    icyRoadsActive = true
-    local duration = math.random(5, 30) * 60000 -- 5 bis 30 Minuten
-
-    ServerAnnouncement("~b~Achtung: Glatteis auf den Straßen! Fahr vorsichtig!", {0, 191, 255})
-    TriggerClientEvent("dynamic_events:icyRoadsStart", -1)
-
-    Citizen.CreateThread(function()
-        local remaining = duration / 1000
-        while remaining > 0 and icyRoadsActive do
-            Citizen.Wait(1000)
-            remaining = remaining - 1
-            if exports.weather_seasons:GetCurrentTemperature() >= 0 then
-                break
-            end
-        end
-        if icyRoadsActive then
-            icyRoadsActive = false
-            TriggerClientEvent("dynamic_events:icyRoadsEnd", -1)
-            ServerAnnouncement("~g~Das Glatteis ist verschwunden.", {0, 255, 0})
-        end
-    end)
+local numToGet = math.min(num, #shuffledLocations)
+for i = 1, numToGet do
+    table.insert(randomLocations, shuffledLocations[i])
+end
+return randomLocations
 end
 
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(Config.DynamicEvents.CheckIntervalMinutes * 60 * 1000)
+function StartAutumnEvent() while Config == nil or Config.AutumnEvent == nil do Wait(1000) end if isAutumnEventActive or not Config.AutumnEvent.Enabled then return end
 
-        if not isEventActive and not icyRoadsActive then
-            local weather = exports.weather_seasons:GetCurrentWeather()
-            local temp = exports.weather_seasons:GetCurrentTemperature()
-            local isHeatwave = exports.weather_seasons:IsHeatwaveActive()
+local result = exports.oxmysql:executeSync("SELECT event_start_time FROM event_timers WHERE event_name = 'autumn'", {})
+local startTime = result and result[1] and result[1].event_start_time
 
-            if weather == "THUNDER" and math.random() < Config.DynamicEvents.PowerOutage.Chance then
-                StartPowerOutage()
-            elseif isHeatwave and math.random() < Config.DynamicEvents.Bushfire.Chance then
-                StartBushfire()
-            elseif weather == "BLIZZARD" and math.random() < Config.DynamicEvents.Blizzard.Chance then
-                StartBlizzard()
-            elseif temp < 0 and math.random() < Config.DynamicEvents.Glatteis.Chance then
-                StartIcyRoads()
-            end
-        end
-
-        if icyRoadsActive and exports.weather_seasons:GetCurrentTemperature() >= 0 then
-            icyRoadsActive = false
-            TriggerClientEvent("dynamic_events:icyRoadsEnd", -1)
-            ServerAnnouncement("~g~Das Glatteis wurde durch steigende Temperaturen beseitigt.", {0, 255, 0})
-        end
+if startTime then
+    if os.time() - startTime > (Config.AutumnEvent.DurationDays * 86400) then
+        print("[Herbst-Event] Event-Dauer ist abgelaufen.")
+        return
     end
-end)
+else
+    exports.oxmysql:insertSync("INSERT INTO event_timers (event_name, event_start_time) VALUES ('autumn', ?)", {os.time()})
+end
+
+isAutumnEventActive = true
+print("[Herbst-Event] Es ist Herbst! Das Kürbis-Event wird gestartet.")
+local locations = getRandomPumpkinLocations(15)
+
+exports.oxmysql:executeSync("DELETE FROM autumn_pumpkins_locations", {})
+for _, pos in ipairs(locations) do
+    exports.oxmysql:insertSync("INSERT INTO autumn_pumpkins_locations (x, y, z) VALUES (?, ?, ?)", {pos.x, pos.y, pos.z})
+end
+end
+
+function StopAutumnEvent() if not isAutumnEventActive then return end isAutumnEventActive = false print("[Herbst-Event] Event gestoppt.") exports.oxmysql:executeSync("DELETE FROM autumn_pumpkins_locations", {}) TriggerClientEvent("autumn_event:removeAllPumpkins", -1) end
+
+RegisterNetEvent('season:updateSeason') AddEventHandler('season:updateSeason', function(seasonName, temperature) if seasonName == "Herbst" then StartAutumnEvent() else StopAutumnEvent() end end)
+
+CreateThread(function() -- Kurze Verzögerung, um sicherzustellen, dass das Hauptskript die Jahreszeit geladen hat Wait(5000) if exports.weather_seasons:GetCurrentSeason() == "Herbst" then StartAutumnEvent() end end)
+   RegisterNetEvent("autumn_event:spawnPumpkins") AddEventHandler("autumn_event:spawnPumpkins", function() if not isAutumnEventActive then return end local src = source local result = exports.oxmysql:executeSync("SELECT * FROM autumn_pumpkins_locations", {}) if result then local locations = {} for _, row in ipairs(result) do table.insert(locations, vector3(row.x, row.y, row.z)) end TriggerClientEvent("autumn_event:createPumpkins", src, locations, pumpkinModels) end end)
+
+RegisterNetEvent("autumn_event:findPumpkin") AddEventHandler("autumn_event:findPumpkin", function(pumpkinIndex) if not isAutumnEventActive then return end local src = source local xPlayer = ESX.GetPlayerFromId(src) if not xPlayer then return end if foundPumpkins[pumpkinIndex] then TriggerClientEvent("esx:showNotification", src, "❌ Dieser Kürbis wurde bereits gefunden!") return end foundPumpkins[pumpkinIndex] = true local reward = getAutumnReward() if reward.type == "money" then local amount = math.random(reward.amount.min, reward.amount.max) xPlayer.addAccountMoney("bank", amount) TriggerClientEvent("esx:showNotification", src, "🎃 Du hast einen Kürbis gefunden und $" .. amount .. " erhalten!") elseif reward.type == "item" then xPlayer.addInventoryItem(reward.name, reward.amount) TriggerClientEvent("esx:showNotification", src, "🎃 Du hast einen Kürbis gefunden und " .. reward.amount .. "x " .. reward.name .. " erhalten!") end TriggerClientEvent("autumn_event:updatePumpkins", -1, foundPumpkins) TriggerClientEvent("autumn_event:removePumpkinBlip", -1, pumpkinIndex) end)
+
+CreateThread(function() -- Warte auf die Konfiguration while Config == nil do Wait(1000) end exports.oxmysql:executeSync("CREATE TABLE IF NOT EXISTS autumn_pumpkins_locations (id INT AUTO_INCREMENT PRIMARY KEY, x FLOAT NOT NULL, y FLOAT NOT NULL, z FLOAT NOT NULL);") exports.oxmysql:executeSync("CREATE TABLE IF NOT EXISTS event_timers (event_name VARCHAR(50) PRIMARY KEY, event_start_time INT NOT NULL);") end)

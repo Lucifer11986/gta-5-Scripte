@@ -82,7 +82,11 @@ end)
 -- Main timer loop for season changes
 Citizen.CreateThread(function()
     while true do
+
+        Citizen.Wait(Config.SeasonDuration * 1000)
+
         Citizen.Wait(Config.SeasonDurationSeconds * 1000)  -- Hier geändert von SeasonDuration auf SeasonDurationSeconds
+
         ChangeSeason()
     end
 end)

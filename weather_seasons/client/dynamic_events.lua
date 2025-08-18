@@ -1,127 +1,205 @@
-ESX = exports['es_extended']:getSharedObject()
+ESX = exports["es_extended"]:getSharedObject()
 
-local isPowerOutageActive = false
-local blizzardBlips = {}
-local bushfireFires = {}
-local isIcyRoadsActive = false
-local bushfireBlip = nil
+math.randomseed(os.time())
 
--- Stromausfall-Event
-RegisterNetEvent("dynamic_events:powerOutage")
-AddEventHandler("dynamic_events:powerOutage", function(coords, radius)
-    SetArtificialLightsState(true)
-    isPowerOutageActive = true
-end)
+local isAutumnEventActive = false
+local pumpkinModels = { "prop_pumpkin_01" }
+local foundPumpkins = {}
 
-RegisterNetEvent("dynamic_events:powerRestored")
-AddEventHandler("dynamic_events:powerRestored", function()
-    SetArtificialLightsState(false)
-    isPowerOutageActive = false
-end)
-
--- Blizzard-Event
-RegisterNetEvent("dynamic_events:blizzardWarning")
-AddEventHandler("dynamic_events:blizzardWarning", function(blockedRoads)
-    for _, road in ipairs(blockedRoads) do
-        local blip = AddBlipForCoord(road.coords)
-        SetBlipSprite(blip, 161) -- Warnungssymbol
-        SetBlipColour(blip, 1) -- Rot
-        SetBlipScale(blip, 1.0)
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString("Straßensperrung: " .. road.name)
-        EndTextCommandSetBlipName(blip)
-        table.insert(blizzardBlips, blip)
+-- Belohnung für das Aufheben eines Kürbisses
+function getAutumnReward()
+    -- Warte auf die Konfiguration
+    while Config == nil or Config.AutumnEvent == nil do
+        Wait(1000)
     end
-end)
 
-RegisterNetEvent("dynamic_events:blizzardEnd")
-AddEventHandler("dynamic_events:blizzardEnd", function()
-    for _, blip in ipairs(blizzardBlips) do
-        RemoveBlip(blip)
+    local roll = math.random(1, 100)
+    local probs = Config.AutumnEvent.RewardProbabilities
+    local rewardTier
+
+    if roll <= probs.very_rare then
+        rewardTier = "very_rare"
+    elseif roll <= probs.very_rare + probs.rare then
+        rewardTier = "rare"
+    else
+        rewardTier = "common"
     end
-    blizzardBlips = {}
-end)
 
--- Buschfeuer-Event starten
-RegisterNetEvent("dynamic_events:startBushfireClient")
-AddEventHandler("dynamic_events:startBushfireClient", function(x, y, z)
-    local fireHandle = StartScriptFire(x, y, z, 25, true)
-    table.insert(bushfireFires, fireHandle)
-end)
+    local rewards = Config.AutumnEvent.Rewards[rewardTier]
+    return rewards[math.random(#rewards)]
+end
 
--- Buschfeuer Blip hinzufügen
-RegisterNetEvent("dynamic_events:addBushfireBlip")
-AddEventHandler("dynamic_events:addBushfireBlip", function(x, y, z)
-    if bushfireBlip then
-        RemoveBlip(bushfireBlip)
+-- Zufällige Kürbis-Standorte holen
+function getRandomPumpkinLocations(num)
+    local randomLocations = {}
+
+    while Config == nil or Config.AutumnEvent == nil do
+        Wait(1000)
     end
-    bushfireBlip = AddBlipForCoord(x, y, z)
-    SetBlipSprite(bushfireBlip, 436) -- Feuer-Icon
-    SetBlipColour(bushfireBlip, 1)   -- Rot
-    SetBlipScale(bushfireBlip, 1.2)
-    BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString("Buschfeuer")
-    EndTextCommandSetBlipName(bushfireBlip)
-end)
 
--- Buschfeuer Blip entfernen
-RegisterNetEvent("dynamic_events:removeBushfireBlip")
-AddEventHandler("dynamic_events:removeBushfireBlip", function()
-    if bushfireBlip then
-        RemoveBlip(bushfireBlip)
-        bushfireBlip = nil
+    local shuffledLocations = {}
+    for i, pos in ipairs(Config.AutumnEvent.PumpkinLocations) do
+        table.insert(shuffledLocations, pos)
     end
-end)
 
--- Cleanup beim Resource Stop
-AddEventHandler('onResourceStop', function(resourceName)
-    if resourceName == GetCurrentResourceName() then
-        SetArtificialLightsState(false)
+    -- Fisher-Yates Shuffle
+    for i = #shuffledLocations, 2, -1 do
+        local j = math.random(i)
+        shuffledLocations[i], shuffledLocations[j] = shuffledLocations[j], shuffledLocations[i]
+    end
 
-        for _, fireHandle in ipairs(bushfireFires) do
-            RemoveScriptFire(fireHandle)
+    local numToGet = math.min(num, #shuffledLocations)
+    for i = 1, numToGet do
+        table.insert(randomLocations, shuffledLocations[i])
+    end
+
+    return randomLocations
+end
+
+-- Event starten
+function StartAutumnEvent()
+    while Config == nil or Config.AutumnEvent == nil do
+        Wait(1000)
+    end
+
+    if isAutumnEventActive or not Config.AutumnEvent.Enabled then
+        return
+    end
+
+    local result = exports.oxmysql:executeSync("SELECT event_start_time FROM event_timers WHERE event_name = 'autumn'", {})
+    local startTime = result and result[1] and result[1].event_start_time
+
+    if startTime then
+        if os.time() - startTime > (Config.AutumnEvent.DurationDays * 86400) then
+            print("[Herbst-Event] Event-Dauer ist abgelaufen.")
+            return
         end
-        bushfireFires = {}
+    else
+        exports.oxmysql:insertSync(
+            "INSERT INTO event_timers (event_name, event_start_time) VALUES ('autumn', ?)",
+            { os.time() }
+        )
+    end
 
-        for _, blip in ipairs(blizzardBlips) do
-            RemoveBlip(blip)
-        end
-        blizzardBlips = {}
+    isAutumnEventActive = true
+    print("[Herbst-Event] Es ist Herbst! Das Kürbis-Event wird gestartet.")
 
-        if bushfireBlip then
-            RemoveBlip(bushfireBlip)
-            bushfireBlip = nil
-        end
+    local locations = getRandomPumpkinLocations(15)
+
+    exports.oxmysql:executeSync("DELETE FROM autumn_pumpkins_locations", {})
+    for _, pos in ipairs(locations) do
+        exports.oxmysql:insertSync(
+            "INSERT INTO autumn_pumpkins_locations (x, y, z) VALUES (?, ?, ?)",
+            { pos.x, pos.y, pos.z }
+        )
+    end
+end
+
+-- Event stoppen
+function StopAutumnEvent()
+    if not isAutumnEventActive then
+        return
+    end
+
+    isAutumnEventActive = false
+    print("[Herbst-Event] Event gestoppt.")
+
+    exports.oxmysql:executeSync("DELETE FROM autumn_pumpkins_locations", {})
+    TriggerClientEvent("autumn_event:removeAllPumpkins", -1)
+end
+
+-- Reagiere auf Jahreszeiten-Wechsel
+RegisterNetEvent("season:updateSeason")
+AddEventHandler("season:updateSeason", function(seasonName, temperature)
+    if seasonName == "Herbst" then
+        StartAutumnEvent()
+    else
+        StopAutumnEvent()
     end
 end)
 
--- Glatteis Events
-RegisterNetEvent("dynamic_events:icyRoadsStart")
-AddEventHandler("dynamic_events:icyRoadsStart", function()
-    isIcyRoadsActive = true
-    ESX.ShowNotification("~b~Glatteis auf den Straßen! Fahr vorsichtig!")
-end)
-
-RegisterNetEvent("dynamic_events:icyRoadsEnd")
-AddEventHandler("dynamic_events:icyRoadsEnd", function()
-    isIcyRoadsActive = false
-    ESX.ShowNotification("~g~Das Glatteis ist verschwunden.")
-end)
-
--- Beispiel: Fahrverhalten anpassen bei Glatteis (optional)
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(500)
-        if isIcyRoadsActive then
-            local playerPed = PlayerPedId()
-            if IsPedInAnyVehicle(playerPed, false) then
-                local vehicle = GetVehiclePedIsIn(playerPed, false)
-                SetVehicleHandlingFloat(vehicle, "CHandlingData", "fTractionCurveMax", 1.0, true)
-                SetVehicleHandlingFloat(vehicle, "CHandlingData", "fTractionCurveMin", 0.8, true)
-                SetVehicleHandlingFloat(vehicle, "CHandlingData", "fLowSpeedTractionLossMult", 1.2, true)
-            end
-        else
-            Citizen.Wait(1000)
-        end
+-- Initialer Check beim Skriptstart
+CreateThread(function()
+    -- Kurze Verzögerung, um sicherzustellen, dass das Hauptskript die Jahreszeit geladen hat
+    Wait(5000)
+    if exports.weather_seasons:GetCurrentSeason() == "Herbst" then
+        StartAutumnEvent()
     end
+end)
+
+-- Kürbisse an Spieler senden
+RegisterNetEvent("autumn_event:spawnPumpkins")
+AddEventHandler("autumn_event:spawnPumpkins", function()
+    if not isAutumnEventActive then
+        return
+    end
+
+    local src = source
+    local result = exports.oxmysql:executeSync("SELECT * FROM autumn_pumpkins_locations", {})
+
+    if result then
+        local locations = {}
+        for _, row in ipairs(result) do
+            table.insert(locations, vector3(row.x, row.y, row.z))
+        end
+        TriggerClientEvent("autumn_event:createPumpkins", src, locations, pumpkinModels)
+    end
+end)
+
+-- Spieler hebt Kürbis auf
+RegisterNetEvent("autumn_event:findPumpkin")
+AddEventHandler("autumn_event:findPumpkin", function(pumpkinIndex)
+    if not isAutumnEventActive then
+        return
+    end
+
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    if not xPlayer then
+        return
+    end
+
+    if foundPumpkins[pumpkinIndex] then
+        TriggerClientEvent("esx:showNotification", src, "❌ Dieser Kürbis wurde bereits gefunden!")
+        return
+    end
+
+    foundPumpkins[pumpkinIndex] = true
+    local reward = getAutumnReward()
+
+    if reward.type == "money" then
+        local amount = math.random(reward.amount.min, reward.amount.max)
+        xPlayer.addAccountMoney("bank", amount)
+        TriggerClientEvent("esx:showNotification", src, "🎃 Du hast einen Kürbis gefunden und $" .. amount .. " erhalten!")
+    elseif reward.type == "item" then
+        xPlayer.addInventoryItem(reward.name, reward.amount)
+        TriggerClientEvent("esx:showNotification", src, "🎃 Du hast einen Kürbis gefunden und " .. reward.amount .. "x " .. reward.name .. " erhalten!")
+    end
+
+    TriggerClientEvent("autumn_event:updatePumpkins", -1, foundPumpkins)
+    TriggerClientEvent("autumn_event:removePumpkinBlip", -1, pumpkinIndex)
+end)
+
+-- Tabellen erstellen (falls nicht vorhanden)
+CreateThread(function()
+    -- Warte auf die Konfiguration
+    while Config == nil do
+        Wait(1000)
+    end
+
+    exports.oxmysql:executeSync([[
+        CREATE TABLE IF NOT EXISTS autumn_pumpkins_locations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            x FLOAT NOT NULL,
+            y FLOAT NOT NULL,
+            z FLOAT NOT NULL
+        );
+    ]])
+
+    exports.oxmysql:executeSync([[
+        CREATE TABLE IF NOT EXISTS event_timers (
+            event_name VARCHAR(50) PRIMARY KEY,
+            event_start_time INT NOT NULL
+        );
+    ]])
 end)

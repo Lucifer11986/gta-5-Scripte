@@ -40,11 +40,19 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(1000) -- Jede Sekunde prüfen
         local playerPed = PlayerPedId()
+
+
+        if IsPedInAnyVehicle(playerPed, false) then
+            local vehicle = GetVehiclePedIsIn(playerPed, false)
+            local vehicleEntity = Entity(vehicle)
+
+
         
         if IsPedInAnyVehicle(playerPed, false) then
             local vehicle = GetVehiclePedIsIn(playerPed, false)
             local vehicleEntity = Entity(vehicle)
             
+
             -- Reduziere den Grip nur, wenn es kalt ist UND keine Schneeketten montiert sind
             if currentSeason == "Winter" and currentTemperature < 0 and not vehicleEntity.state.hasSnowChains then
                 SetVehicleReduceGrip(vehicle, true)
@@ -64,4 +72,8 @@ Citizen.CreateThread(function()
             startLeafEffect()
         end
     end
+
 end)
+
+end)
+

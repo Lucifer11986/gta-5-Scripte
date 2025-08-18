@@ -11,17 +11,19 @@ AddEventHandler("autumn_event:createPumpkins", function(locations, models)
     for i, loc in ipairs(locations) do
         local model = pumpkinModels[math.random(#pumpkinModels)]
         RequestModel(model)
+
         Citizen.CreateThread(function()
             while not HasModelLoaded(model) do
                 Citizen.Wait(100)
             end
+
             local pumpkin = CreateObject(model, loc, false, true, true)
             PlaceObjectOnGroundProperly(pumpkin)
             table.insert(spawnedPumpkins, pumpkin)
 
             local blip = AddBlipForCoord(loc)
             SetBlipSprite(blip, 487) -- Kürbis-ähnliches Icon
-            SetBlipColour(blip, 6) -- Orange
+            SetBlipColour(blip, 6)   -- Orange
             SetBlipScale(blip, 0.7)
             SetBlipAsShortRange(blip, true)
             BeginTextCommandSetBlipName("STRING")
