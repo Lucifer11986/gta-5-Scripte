@@ -1,84 +1,96 @@
+let selectedStock = null;
+
+// NUI Message Listener
 window.addEventListener('message', function(event) {
-    let data = event.data;
-
+    const data = event.data;
     if (data.type === "ui") {
-        if (data.display === true) {
-            document.body.style.display = "block";
-        } else {
-            document.body.style.display = "none";
-        }
+        document.body.style.display = data.display ? "flex" : "none";
     }
-
     if (data.type === "updateStocks") {
         updateStockList(data.stocks);
     }
+    if (data.type === "updateMyStocks") {
+        updateMyStockList(data.stocks);
+    }
 });
 
-document.getElementById('close-button').addEventListener('click', function() {
-    fetch(`https://${GetParentResourceName()}/closeNUI`, {
+// Helper to send NUI callbacks
+function post(event, data = {}) {
+    fetch(`https://${GetParentResourceName()}/${event}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    }).then(() => {
-        document.body.style.display = "none";
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     }).catch(error => console.error('Error:', error));
-});
+}
 
-document.getElementById('logout-button').addEventListener('click', function() {
-    fetch(`https://${GetParentResourceName()}/closeNUI`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    }).then(() => {
-        document.body.style.display = "none";
-    }).catch(error => console.error('Error:', error));
-});
-
-document.getElementById('buy-button').addEventListener('click', function() {
-    fetch(`https://${GetParentResourceName()}/buyStock`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    }).catch(error => console.error('Error:', error));
-});
-
-document.getElementById('sell-button').addEventListener('click', function() {
-    fetch(`https://${GetParentResourceName()}/sellStock`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    }).catch(error => console.error('Error:', error));
-});
+// Event Listeners
+document.getElementById('close-button').addEventListener('click', () => post('closeNUI'));
+document.getElementById('logout-button').addEventListener('click', () => post('closeNUI'));
 
 document.querySelectorAll('.category-button').forEach(button => {
     button.addEventListener('click', function() {
-        let category = this.getAttribute('data-category');
-        fetch(`https://${GetParentResourceName()}/filterStocks`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ category: category })
-        }).catch(error => console.error('Error:', error));
+        // Visually mark active category
+        document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        post('filterStocks', { category: this.getAttribute('data-category') });
     });
 });
 
+document.getElementById('buy-button').addEventListener('click', () => {
+    const amount = parseInt(document.getElementById('amount-input').value);
+    if (selectedStock && amount > 0) {
+        post('buyStock', { stockName: selectedStock.name, amount: amount });
+    } else {
+        console.log("No stock selected or invalid amount");
+    }
+});
+
+document.getElementById('sell-button').addEventListener('click', () => {
+    const amount = parseInt(document.getElementById('amount-input').value);
+    if (selectedStock && amount > 0) {
+        post('sellStock', { stockName: selectedStock.name, amount: amount });
+    } else {
+        console.log("No stock selected or invalid amount");
+    }
+});
+
+
+// Functions to update UI
 function updateStockList(stocks) {
     const stockList = document.getElementById('stock-list');
-    stockList.innerHTML = ''; // Clear existing stocks
-
+    stockList.innerHTML = '';
     stocks.forEach(stock => {
-        let stockItem = document.createElement('div');
-        stockItem.className = 'stock-item';
-        stockItem.innerText = `${stock.name}: $${stock.price}`;
-        stockList.appendChild(stockItem);
+        const item = document.createElement('div');
+        item.className = 'stock-item';
+        item.innerHTML = `<span>${stock.label} (${stock.name.toUpperCase()})</span><span>$${stock.price}</span>`;
+        item.onclick = () => {
+            selectedStock = stock;
+            // Highlight selected stock
+            document.querySelectorAll('#stock-list .stock-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+        };
+        stockList.appendChild(item);
     });
+}
+
+function updateMyStockList(myStocks) {
+    const myStockList = document.getElementById('my-stock-list');
+    myStockList.innerHTML = '';
+    if (myStocks && myStocks.length > 0) {
+        myStocks.forEach(stock => {
+            const item = document.createElement('div');
+            item.className = 'stock-item';
+            item.innerHTML = `<span>${stock.label} (${stock.stock_name.toUpperCase()})</span><span>${stock.amount}</span>`;
+            // Optional: allow selecting owned stocks for selling
+            item.onclick = () => {
+                selectedStock = { name: stock.stock_name, label: stock.label, price: stock.price }; // creating a temporary stock object
+                 // Highlight selected stock
+                document.querySelectorAll('#my-stock-list .stock-item').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+            };
+            myStockList.appendChild(item);
+        });
+    } else {
+        myStockList.innerHTML = '<div class="stock-item"><span>Du besitzt keine Aktien.</span></div>';
+    }
 }
