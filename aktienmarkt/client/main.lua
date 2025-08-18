@@ -1,71 +1,115 @@
+ESX = nil
 local isOpen = false
 
--- Öffne das NUI wenn die E-Taste gedrückt wird und der Spieler sich in der Nähe des Markers befindet
 Citizen.CreateThread(function()
-    local markerPos = vector3(251.66, 221.71, 106.29)
-    local markerRadius = 2.0
-
-    while true do
-        local playerPed = PlayerPedId()
-        local playerCoords = GetEntityCoords(playerPed)
-
-        local distance = #(playerCoords - markerPos)
-
-        if distance < markerRadius then
-            DisplayHelpText("Drücke ~INPUT_CONTEXT~ um den Aktienmarkt zu öffnen.")
-
-            if IsControlJustReleased(0, 51) then -- 51 ist die Standardtaste für 'E'
-                SetNuiFocus(true, true)
-                SendNUIMessage({ type = "ui", display = true })
-                isOpen = true
-            end
-        end
-
-        if isOpen then
-            DisableControlAction(0, 1, true) -- Mausbewegung deaktivieren
-            DisableControlAction(0, 2, true) -- Mausbewegung deaktivieren
-            DisableControlAction(0, 142, true) -- Deaktiviere Nahkampfangriffen
-            DisableControlAction(0, 18, true) -- Enter deaktivieren
-            DisableControlAction(0, 322, true) -- ESC deaktivieren
-        end
-
+    while ESX == nil do
+        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
         Citizen.Wait(0)
     end
 end)
 
--- Schließe das NUI wenn die Schließen oder Logout Taste im NUI gedrückt wird
-RegisterNUICallback('closeNUI', function()
+-- Marker und Interaktion
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(0)
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local marketPos = vector3(config.MarketPosition.x, config.MarketPosition.y, config.MarketPosition.z)
+        local distance = #(playerCoords - marketPos)
+
+        if distance < config.markerDistance then
+            -- Draw Marker
+            DrawMarker(
+                config.Marker.type,
+                marketPos.x, marketPos.y, marketPos.z - 0.98,
+                0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0,
+                config.Marker.scale.x, config.Marker.scale.y, config.Marker.scale.z,
+                config.Marker.color.r, config.Marker.color.g, config.Marker.color.b, config.Marker.color.a,
+                false, true, 2, nil, nil, false
+            )
+
+            -- Show Help Text and Handle Input
+            DisplayHelpText("Drücke ~INPUT_CONTEXT~ um den Aktienmarkt zu öffnen.")
+            if IsControlJustReleased(0, 51) then -- 51 = E
+                openNUI()
+            end
+        end
+    end
+end)
+
+-- Blip auf der Karte
+Citizen.CreateThread(function()
+    local blip = AddBlipForCoord(config.MarketPosition.x, config.MarketPosition.y, config.MarketPosition.z)
+
+    SetBlipSprite(blip, config.Blip.sprite)
+    SetBlipDisplay(blip, 4)
+    SetBlipScale(blip, config.Blip.scale)
+    SetBlipColour(blip, config.Blip.color)
+    SetBlipAsShortRange(blip, true)
+
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(config.Blip.name)
+    EndTextCommandSetBlipName(blip)
+end)
+
+
+function openNUI()
+    isOpen = true
+    SetNuiFocus(true, true)
+    SendNUIMessage({ type = "ui", display = true })
+    -- Request initial data
+    TriggerServerEvent('aktienmarkt:getStocks', 'firmen') -- Load 'firmen' by default
+    TriggerServerEvent('aktienmarkt:getMyStocks')
+end
+
+function closeNUI()
+    isOpen = false
     SetNuiFocus(false, false)
     SendNUIMessage({ type = "ui", display = false })
-    isOpen = false
+end
+
+-- NUI Callbacks
+RegisterNUICallback('closeNUI', function(data, cb)
+    closeNUI()
+    cb('ok')
 end)
 
--- Aktien kaufen
 RegisterNUICallback('buyStock', function(data, cb)
-    -- Hier kannst du den Code zum Kauf der Aktie einfügen
-    TriggerServerEvent('aktienmarkt:buyStock', data.stockId)
+    if data.stockName and data.amount and tonumber(data.amount) > 0 then
+        TriggerServerEvent('aktienmarkt:buyStock', data.stockName, tonumber(data.amount))
+    end
     cb('ok')
 end)
 
--- Aktien verkaufen
 RegisterNUICallback('sellStock', function(data, cb)
-    -- Hier kannst du den Code zum Verkauf der Aktie einfügen
-    TriggerServerEvent('aktienmarkt:sellStock', data.stockId)
+    if data.stockName and data.amount and tonumber(data.amount) > 0 then
+        TriggerServerEvent('aktienmarkt:sellStock', data.stockName, tonumber(data.amount))
+    end
     cb('ok')
 end)
 
--- Filtere die Aktien nach Kategorie
 RegisterNUICallback('filterStocks', function(data, cb)
-    TriggerServerEvent('aktienmarkt:filterStocks', data.category)
+    if data.category then
+        TriggerServerEvent('aktienmarkt:getStocks', data.category)
+    end
     cb('ok')
 end)
 
--- Empfangene gefilterte Aktien anzeigen
+-- Net Events from Server
 RegisterNetEvent('aktienmarkt:updateStocks')
 AddEventHandler('aktienmarkt:updateStocks', function(stocks)
     SendNUIMessage({
         type = "updateStocks",
         stocks = stocks
+    })
+end)
+
+RegisterNetEvent('aktienmarkt:updateMyStocks')
+AddEventHandler('aktienmarkt:updateMyStocks', function(myStocks)
+    SendNUIMessage({
+        type = "updateMyStocks",
+        stocks = myStocks
     })
 end)
 
@@ -76,16 +120,17 @@ function DisplayHelpText(text)
     DisplayHelpTextFromStringLabel(0, 0, 1, -1)
 end
 
--- Blip auf der Karte für den Aktienmarkt
+-- Disable controls while NUI is open
 Citizen.CreateThread(function()
-    local blip = AddBlipForCoord(251.66, 221.71, 106.29)
-
-    SetBlipSprite(blip, 500) -- Blip-Symbol
-    SetBlipDisplay(blip, 4)
-    SetBlipScale(blip, 1.0)
-    SetBlipColour(blip, 2) -- Farbe grün
-
-    BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString("Aktienmarkt")
-    EndTextCommandSetBlipName(blip)
+    while true do
+        if isOpen then
+            DisableControlAction(0, 1, true) -- LookLeftRight
+            DisableControlAction(0, 2, true) -- LookUpDown
+            DisableControlAction(0, 142, true) -- MeleeAttackAlternate
+            DisableControlAction(0, 18, true) -- Enter
+            DisableControlAction(0, 322, true) -- ESC
+            DisableControlAction(2, 200, true) -- ESC
+        end
+        Citizen.Wait(0)
+    end
 end)

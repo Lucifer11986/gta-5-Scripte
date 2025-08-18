@@ -34,3 +34,15 @@ config.Blip = {
 -- Preisänderungen und andere spezielle Funktionen können hier definiert werden
 -- Beispiel:
 config.priceChangeRate = 0.1  -- Beispielwert für die Preisänderungsrate
+
+-- [[ Dynamic Price Settings ]]
+-- Enable this to have stock prices change automatically
+config.DynamicPrices = {
+    enabled = true,
+    -- Interval in minutes for price changes
+    changeIntervalMinutes = 15,
+    -- Maximum price change in percent (e.g. 5 means prices can change between -5% and +5%)
+    maxChangePercent = 5,
+    -- Send a server-wide notification when prices are updated
+    broadcastUpdate = true
+}
