@@ -1,0 +1,244 @@
+:root {
+    --size: 65px;
+    --font-color: #f1f1f1;
+    --bg-color: rgba(10, 10, 10, 0.3);
+    --glow-strength: 10px;
+
+    /* Neon Colors */
+    --health-color: #ff3838;
+    --armor-color: #3498db;
+    --hunger-color: #f1c40f;
+    --thirst-color: #5dade2;
+    --addiction-color: #9b59b6;
+    --temperature-color: #e67e22;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    color: var(--font-color);
+}
+
+/* --- Player HUD --- */
+#hud-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+}
+
+.hud-element {
+    width: var(--size);
+    height: var(--size);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.circle-bg {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--bg-color);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    z-index: 1;
+}
+
+.circle-progress {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 2;
+    --progress-color: white;
+    background: conic-gradient(var(--progress-color) 0deg, transparent 0deg);
+    transition: background 0.2s ease-out;
+    filter: drop-shadow(0 0 3px var(--progress-color));
+    mask-image: radial-gradient(circle at center, transparent 90%, #000 91%);
+}
+
+#health-progress { --progress-color: var(--health-color); }
+#armor-progress { --progress-color: var(--armor-color); }
+#hunger-progress { --progress-color: var(--hunger-color); }
+#thirst-progress { --progress-color: var(--thirst-color); }
+#addiction-progress { --progress-color: var(--addiction-color); }
+#temperature-progress { --progress-color: var(--temperature-color); }
+
+.inner-content {
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.icon {
+    font-size: calc(var(--size) * 0.4);
+    line-height: 1;
+}
+
+.percentage {
+    font-size: calc(var(--size) * 0.22);
+    font-weight: 700;
+    line-height: 1;
+}
+.percentage::after {
+    content: '%';
+    font-size: 0.7em;
+}
+#temperature .percentage::after, #addiction .percentage::after {
+    content: '';
+}
+#temperature .percentage::after {
+    content: '°C';
+}
+
+.hud-element.low-health .inner-content,
+.hud-element.low-hunger .inner-content {
+    animation: neon-pulse 1.2s infinite;
+}
+
+#health.low-health { --pulse-color: var(--health-color); }
+#hunger.low-hunger { --pulse-color: var(--hunger-color); }
+
+@keyframes neon-pulse {
+    0%, 100% { 
+        transform: scale(1);
+        filter: drop-shadow(0 0 5px var(--pulse-color));
+    }
+    50% { 
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 15px var(--pulse-color));
+    }
+}
+
+#vehicle-hud-container {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 280px;
+    font-family: 'Roboto', sans-serif;
+    filter: drop-shadow(0 0 8px rgba(0,0,0,0.7));
+    pointer-events: none;
+    user-select: none;
+    /* Kein Hintergrund, kein Rahmen */
+    background: transparent;
+    z-index: 1000;
+}
+
+/* Container für Tacho (Speed-Arc + Nadel + Speed-Display) */
+.speed-arc-container {
+    position: absolute;
+    top: -140px; /* hoch genug, damit es über dem Kasten schwebt */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    height: 140px;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 15;
+}
+
+/* Moderner Tachobogen: dünner, minimalistisch, halbtransparent */
+.speed-arc-progress {
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: conic-gradient(
+        from 135deg,
+        rgba(0, 191, 255, 0.6) 0deg,
+        rgba(0, 255, 255, 0.6) 90deg,
+        rgba(255, 255, 0, 0.6) 180deg,
+        rgba(255, 128, 0, 0.6) 240deg,
+        rgba(255, 0, 0, 0.6) 270deg,
+        rgba(0,0,0,0.1) 270deg,
+        rgba(0,0,0,0.1) 360deg
+    );
+    mask-image: radial-gradient(circle at center, transparent 85%, black 87%);
+    filter: drop-shadow(0 0 10px rgba(0,191,255,0.7));
+    transition: background 0.3s ease;
+}
+
+/* Tachonadel: dünner, weicher Verlauf, animiert */
+.speed-needle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 6px;
+    height: 120px;
+    background: linear-gradient(180deg, #00bfff, #004f7c);
+    border-radius: 3px;
+    box-shadow: 0 0 15px #00bfff;
+    transform-origin: bottom center;
+    transform: rotate(-135deg);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+}
+
+/* Geschwindigkeitsanzeige mittig im Tacho */
+.speed-display {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    z-index: 25;
+    text-align: center;
+    user-select: none;
+}
+
+.speed-display #speed-value {
+    font-size: 5rem;
+    font-weight: 700;
+    text-shadow: 0 0 15px #00bfff;
+    letter-spacing: 0.05em;
+}
+
+.speed-display .unit {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #00bfffaa;
+    text-shadow: 0 0 8px #00bfff;
+}
+
+/* Tank- und Motoranzeige-Kasten: unten, sichtbar, nicht verdeckt */
+.vehicle-info {
+    position: relative;
+    margin-top: 80px; /* Platz schaffen für das überlagernde Tacho */
+    padding: 10px 25px;
+    color: #eee;
+    font-size: 1.2rem;
+    background: rgba(10, 10, 10, 0.75);
+    border-radius: 25px;
+    box-shadow: 0 0 20px #00bfffcc;
+    user-select: none;
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    z-index: 10;
+}
+
+.vehicle-info .separator {
+    color: #666;
+}
+
+.vehicle-info .fa-solid {
+    margin-right: 8px;
+    color: #00bfff;
+    filter: drop-shadow(0 0 6px #00bfff);
+}
+
+

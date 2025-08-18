@@ -94,4 +94,8 @@ AddEventHandler("winter_event:removeAllPresents", function()
         DeleteObject(present)
     end
     spawnedPresents = {}
+
 end)
+
+end)
+

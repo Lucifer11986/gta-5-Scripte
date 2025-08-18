@@ -1,0 +1,54 @@
+body {
+    background-color: rgba(0, 0, 0, 0); /* Halbdurchsichtiger Hintergrund */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#app {
+    display: none; /* Standardmäßig ausgeblendet */
+    max-width: 900px;
+}
+
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px;
+}
+
+.card-body {
+    padding: 30px;
+}
+
+h1, h2 {
+    color: #343a40;
+}
+
+.list-group-item {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s;
+}
+
+.list-group-item:hover {
+    background-color: #f1f1f1;
+}
+
+button {
+    margin-top: 20px;
+}
+
+.btn {
+    width: 150px;
+}

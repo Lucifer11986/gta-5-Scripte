@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    overflow: hidden;
+}
+
+#spray-ui {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+}
+
+button {
+    background-color: #e74c3c;
+    border: none;
+    padding: 10px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #c0392b;
+}
+
+.motif-item {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #34495e;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.motif-item:hover {
+    background-color: #2c3e50;
+}

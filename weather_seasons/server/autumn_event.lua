@@ -3,7 +3,11 @@ ESX = exports["es_extended"]:getSharedObject()
 math.randomseed(os.time())
 
 local isAutumnEventActive = false
+
 local pumpkinModels = { "prop_pumpkin_01" } -- Placeholder model, user needs to provide actual models
+
+local pumpkinModels = { "prop_pumpkin_01" } -- Placeholder model, you need to provide actual models
+
 local foundPumpkins = {}
 
 function getAutumnReward()
@@ -76,9 +80,13 @@ AddEventHandler('season:updateSeason', function(seasonName, temperature)
     end
 end)
 
+
 CreateThread(function()
     -- Kurze Verzögerung, um sicherzustellen, dass das Hauptskript die Jahreszeit geladen hat
     Wait(5000)
+
+AddEventHandler("weather_seasons:initialized", function()
+
     if exports.weather_seasons:GetCurrentSeason() == "Herbst" then
         StartAutumnEvent()
     end
@@ -125,4 +133,8 @@ end)
 CreateThread(function()
     exports.oxmysql:executeSync("CREATE TABLE IF NOT EXISTS autumn_pumpkins_locations (id INT AUTO_INCREMENT PRIMARY KEY, x FLOAT NOT NULL, y FLOAT NOT NULL, z FLOAT NOT NULL);")
     exports.oxmysql:executeSync("CREATE TABLE IF NOT EXISTS event_timers (event_name VARCHAR(50) PRIMARY KEY, event_start_time INT NOT NULL);")
+
 end)
+
+end)
+
