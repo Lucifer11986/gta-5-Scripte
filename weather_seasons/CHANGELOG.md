@@ -1,70 +1,59 @@
+# Changelog
 
-📝 **CHANGELOG**
+All notable changes to this project will be documented in this file.
 
-## **v1.3 - (18. Februar 2025)**
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-### 📌 **Neuerungen & Verbesserungen:**
-✅ **Sanfte Übergänge für Jahreszeiten & Wetter**
-- Wetter ändert sich jetzt **weicher über 10–15 Sekunden** statt abrupt zu wechseln.
-- **SetWeatherTypeTransition** optimiert für einen realistischen Übergang.
-- Temperatur steigt oder fällt nun **in kleinen Schritten** für mehr Immersion.
-- **Timecycle Modifier** werden langsam verstärkt/abgeschwächt, um harte Sprünge zu vermeiden.
+## [4.0.0] - 2025-08-10
+### Added
+- **Schneeketten-System:**
+    - Hinzufügen des `snow_chains` Items.
+    - Logik zum Anbringen und Entfernen von Schneeketten an Fahrzeugen.
+    - Schneeketten verbessern den Grip auf vereisten Straßen im Winter.
+    - Schneeketten haben eine begrenzte Haltbarkeit.
+    - Das Nutzen von Schneeketten außerhalb des Winters zerstört die Reifen.
 
-✅ **Verbesserung der Schnee- & Hitzewellen-Effekte**
-- Winter hat jetzt einen **dynamischen Schneefall**, der sich sanft verändert.
-- Hitzewellen-Effekt geht **fließend in normalen Sommer über** (kein harter Wechsel).
-- **Neue visuelle Effekte** für extreme Wetterlagen mit sanften Übergängen.
+## [3.0.0] - 2025-08-10
+### Added
+- **Winter-Survival-Mechanik:**
+    - Spieler erleiden Kälteschaden, wenn sie nicht warm genug gekleidet sind.
+    - Schutz vor Kälte in geschlossenen Fahrzeugen und Innenräumen.
+    - Visueller "Frier-Effekt".
+- **Umwelt-Effekte:**
+    - Fallende Laub-Partikel im Herbst.
+    - Reduzierter Fahrzeug-Grip bei Minusgraden im Winter zur Simulation von Glatteis.
+- **Dynamische Wetter-Events:**
+    - Zufällige Stromausfälle bei Gewitter.
+    - Zufällige Buschfeuer bei Hitzewellen.
+    - Zufällige "Straßensperrungen" (via Map-Blips) bei Schneestürmen.
+- **Debug-Befehl:** `/myclothes`-Befehl zur Anzeige von Kleidungs-IDs.
 
-✅ **Optimierte Wetter- & Temperatur-Kontrolle**
-- **Neue Funktion:** Automatische Temperatur- und Wetterüberprüfung alle 60 Sekunden.
-- Bei Hitzewellen oder Schnee wird das Wetter **schrittweise** angepasst.
+### Changed
+- Das Client-Server-Kommunikationsmodell für das Survival-System wurde von Callbacks auf Events umgestellt, um die Kompatibilität mit verschiedenen ESX-Versionen zu gewährleisten.
+- Die Server-Logik wurde angepasst, um mit nicht-standardmäßigen `esx_status`-Konfigurationen umzugehen und Abstürze zu verhindern.
 
-✅ **Verbesserte Benachrichtigung für Jahreszeitenwechsel**
-- Neuer **automatischer Hinweis**, wenn eine neue Jahreszeit beginnt.
-- Sanfte **Blenden & Fadings** für immersivere Wechsel.
-- Textfarbe und Formatierung optimiert für bessere Lesbarkeit.
+## [2.0.0] - 2025-08-09
+### Added
+- **Saisonale Sammel-Events:**
+    - Herbst-Event (Kürbissuche) mit Seltenheits-Belohnungssystem und begrenzter Dauer.
+    - Winter-Event (Geschenkesuche) mit Seltenheits-Belohnungssystem und begrenzter Dauer.
+- **Dynamische Temperatur:** Die Temperatur ändert sich nun in regelmäßigen Abständen innerhalb einer Jahreszeit.
+- **Jahreszeiten-Benachrichtigung:** Eine große Benachrichtigung wird angezeigt, wenn sich die Jahreszeit ändert.
 
----
+### Fixed
+- **Oster-Event Logik:**
+    - Das Event startet nun nur noch im Frühling.
+    - Die Zufälligkeit der Eier-Positionen wurde durch einen korrekten Algorithmus und Seeding verbessert.
+    - Die Belohnungs-Benachrichtigung zeigt nun den korrekten Item-Namen an.
+- **Race Condition beim Start:** Die Initialisierungslogik wurde überarbeitet, um sicherzustellen, dass alle Skript-Teile von derselben korrekten Jahreszeit ausgehen.
+- Diverse "not safe for net" und "nil value" Fehler wurden behoben.
 
-## **v1.2 - (15. Februar 2025)**
+### Changed
+- **Code-Struktur:**
+    - Veraltete und widersprüchliche Skripte (`season_events.lua`, `weather.lua`) wurden deaktiviert oder entfernt.
+    - Die Logik wurde in neue, dedizierte Skripte (`survival_effects.lua`, `dynamic_events.lua` etc.) aufgeteilt.
+    - Das manuelle Laden der `config.lua` wurde entfernt.
+    - Das Haupt-Wetterskript (`weather_seasons.lua`) wurde zur alleinigen Quelle für Jahreszeiten und Wetter gemacht und nutzt nun korrekt die `config.lua`.
 
-📌 **Neuerungen & Verbesserungen:**
-✅ **Kirschblüten-Festival hinzugefügt!** 🌸
-- Admin-Befehl: `/startBlossomFestival` startet das Event.
-- Admin-Befehl: `/stopBlossomFestival` beendet das Event.
-- Automatische Aktivierung der Kirschblüten-Bäume, solange das Event aktiv ist.
-- Blütenregen-Effekte an speziellen Orten während des Festivals.
-- Festival-Markt mit zufälligen Belohnungen für Spieler.
-
-✅ **Optimierungen & Fixes:**
-- Kirschblüten-Resource wird nur während des Events geladen und danach entfernt.
-- Fehlermeldung, falls die Resource "cherryblossom" nicht vorhanden ist.
-- Verbesserte Admin-Prüfung für Befehle.
-
----
-
-## **v1.1 - (13. Februar 2025)**
-
-📌 **Neuerungen & Verbesserungen:**
-✅ **Zufällige Wetterereignisse:**
-- Frühling hat jetzt eine **30% Chance auf Regen** (max. 10 Minuten).
-- Herbst hat jetzt eine **30% Chance auf Sturm** (max. 10 Minuten).
-
-✅ **Alle Konfigurationswerte in die `config.lua` verschoben.**
-✅ **Intervall für Wetteränderungen nun einstellbar** (Standard: 5 Minuten).
-✅ **Optionale Zeiten für Wetterzyklen (2 Wochen bis 6 Monate) als Kommentare hinzugefügt.**
-
----
-
-## **v1.0 - (12. Februar 2025)**
-
-🌍 **Einführung des dynamischen Wetter- und Jahreszeiten-Systems**
-
-- **Frühling:** Blühende Pflanzen, mildes Wetter.
-- **Sommer:** Sonnig & heiß.
-- **Herbst:** Blätterfall, kühles Wetter.
-- **Winter:** Schnee & Kälte.
-- 🌦 **Wetter synchronisiert sich automatisch mit allen Spielern.**
-- ⏳ **Jahreszeiten wechseln automatisch alle X Minuten (einstellbar in `config.lua`).**
-- ❄️ **Winter hat Schnee auf Straßen & Fußspuren werden sichtbar.**
-- 🌿 **Partikeleffekte passend zur Jahreszeit (Blüten, Sonne, Blätter, Schnee).**
+## [1.0.0] - Initial Version
+- Ursprüngliche Version von Lucifer | Awaria Modding.
