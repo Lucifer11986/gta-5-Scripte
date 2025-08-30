@@ -1,7 +1,7 @@
 window.addEventListener('message', function(event) {
     const data = event.data;
 
-    // Spieler-HUD Update (unverändert)
+    // Spieler-HUD Update
     if (data.type === "update") {
         const statuses = {
             health: { value: data.health, low_threshold: 25 },
@@ -43,51 +43,65 @@ window.addEventListener('message', function(event) {
                 }
             }
         }
-    } 
-    else if (data.type === "showVehicle") {
+
+        // Jahreszeit im HUD anzeigen (zusätzlich zur Temperatur)
+        if (data.season) {
+            const seasonElement = document.getElementById("season-value");
+            if (seasonElement) {
+                seasonElement.textContent = data.season;
+            }
+        }
+    }
+});
+
+// Fahrzeug-HUD Verwaltung
+let vehicleHUDVisible = false;
+let lastVehicleData = null;
+
+window.addEventListener('message', function(event) {
+    const data = event.data;
+
+    if (data.type === "showVehicle") {
+        vehicleHUDVisible = data.show;
         const vehicleHud = document.getElementById('vehicle-hud-container');
         if (vehicleHud) {
-            if (data.show) {
-                vehicleHud.classList.add('visible');
-                if (!window.ticksDrawn) {
-                    drawTicks();
-                    window.ticksDrawn = true;
-                }
-            } else {
-                vehicleHud.classList.remove('visible');
+            vehicleHud.style.display = vehicleHUDVisible ? 'block' : 'none';
+            if (vehicleHUDVisible && !window.ticksDrawn) {
+                drawTicks();
+                window.ticksDrawn = true;
             }
         }
     } 
     else if (data.type === "updateVehicle") {
-        const speedPercentMax = 250;
-        const speed = Math.min(data.speed, speedPercentMax);
-        const speedPercent = speed / speedPercentMax;
-
-        // Nadel rotieren (-135° bis +135°)
-        const needleRotation = (speedPercent * 270) - 135;
-        const needle = document.getElementById('needle');
-        if (needle) {
-            needle.setAttribute('transform', `translate(140 130) rotate(${needleRotation})`);
-        }
-
-        // Speed Text aktualisieren
-        const speedText = document.getElementById('speed-text');
-        if (speedText) {
-            speedText.textContent = Math.floor(speed);
-        }
-
-        // Tank- und Motoranzeige
-        const fuelValue = document.getElementById('fuel-value');
-        const engineValue = document.getElementById('engine-value');
-
-        if (fuelValue) {
-            fuelValue.textContent = Math.floor(data.fuel);
-        }
-        if (engineValue) {
-            engineValue.textContent = Math.floor(data.engineHealth);
-        }
+        lastVehicleData = data; // Daten speichern
     }
 });
+
+// Fahrzeug-HUD kontinuierlich aktualisieren
+setInterval(() => {
+    if (!vehicleHUDVisible || !lastVehicleData) return;
+
+    const data = lastVehicleData;
+    const speedPercentMax = 250;
+    const speed = Math.min(data.speed, speedPercentMax);
+    const speedPercent = speed / speedPercentMax;
+
+    // Nadel rotieren
+    const needleRotation = (speedPercent * 270) - 135;
+    const needle = document.getElementById('needle');
+    if (needle) needle.setAttribute('transform', `translate(140 130) rotate(${needleRotation})`);
+
+    // Speed Text
+    const speedText = document.getElementById('speed-text');
+    if (speedText) speedText.textContent = Math.floor(speed);
+
+    // Tank- und Motoranzeige
+    const fuelValue = document.getElementById('fuel-value');
+    const engineValue = document.getElementById('engine-value');
+    if (fuelValue) fuelValue.textContent = Math.floor(data.fuel);
+    if (engineValue) engineValue.textContent = Math.floor(data.engineHealth);
+
+}, 100); // 100ms Intervall = flüssiger
 
 // Funktion: Tacho-Striche und Zahlen zeichnen
 function drawTicks() {
@@ -95,29 +109,25 @@ function drawTicks() {
     if (!ticksGroup) return;
 
     const radius = 110;
-    const startAngle = -135; // Grad
-    const endAngle = 135; // Grad
-    const totalTicks = 27; // 270° / 10° Abstände
-    const majorTickEvery = 3; // alle 3 Ticks (also alle 30°) große Striche und Zahlen
+    const startAngle = -135;
+    const totalTicks = 27;
+    const majorTickEvery = 3;
 
-    // Clear vorherige ticks, falls vorhanden
     ticksGroup.innerHTML = '';
 
     for (let i = 0; i <= totalTicks; i++) {
         const angleDeg = startAngle + (i * (270 / totalTicks));
         const angleRad = (angleDeg * Math.PI) / 180;
 
-        // Start- und Endpunkte Strich
         const isMajor = (i % majorTickEvery) === 0;
         const tickLength = isMajor ? 15 : 7;
         const tickWidth = isMajor ? 3 : 1.5;
 
-        const x1 = Math.cos(angleRad) * (radius);
-        const y1 = Math.sin(angleRad) * (radius);
+        const x1 = Math.cos(angleRad) * radius;
+        const y1 = Math.sin(angleRad) * radius;
         const x2 = Math.cos(angleRad) * (radius - tickLength);
         const y2 = Math.sin(angleRad) * (radius - tickLength);
 
-        // Strich zeichnen
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute('x1', x1.toString());
         line.setAttribute('y1', y1.toString());
@@ -127,12 +137,11 @@ function drawTicks() {
         line.setAttribute('stroke-width', tickWidth.toString());
         ticksGroup.appendChild(line);
 
-        // Zahlen bei großen Ticks
         if (isMajor) {
             const speedValue = Math.round((i * (250 / totalTicks)));
             const textRadius = radius - 30;
             const tx = Math.cos(angleRad) * textRadius;
-            const ty = Math.sin(angleRad) * textRadius + 7; // vertikale Zentrierung
+            const ty = Math.sin(angleRad) * textRadius + 7;
 
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.setAttribute('x', tx.toString());

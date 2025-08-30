@@ -22,7 +22,7 @@ body {
     color: var(--font-color);
 }
 
-/* --- Player HUD --- */
+/* --- Spieler-HUD --- */
 #hud-container {
     position: absolute;
     bottom: 20px;
@@ -30,6 +30,7 @@ body {
     transform: translateX(-50%);
     display: flex;
     gap: 20px;
+    z-index: 1000;
 }
 
 .hud-element {
@@ -92,14 +93,9 @@ body {
 }
 .percentage::after {
     content: '%';
-    font-size: 0.7em;
 }
-#temperature .percentage::after, #addiction .percentage::after {
-    content: '';
-}
-#temperature .percentage::after {
-    content: '°C';
-}
+#temperature .percentage::after { content: '°C'; }
+#addiction .percentage::after { content: ''; }
 
 .hud-element.low-health .inner-content,
 .hud-element.low-hunger .inner-content {
@@ -120,8 +116,9 @@ body {
     }
 }
 
+/* --- Fahrzeug HUD --- */
 #vehicle-hud-container {
-    position: absolute;
+    position: fixed;
     bottom: 30px;
     right: 30px;
     width: 280px;
@@ -129,15 +126,17 @@ body {
     filter: drop-shadow(0 0 8px rgba(0,0,0,0.7));
     pointer-events: none;
     user-select: none;
-    /* Kein Hintergrund, kein Rahmen */
-    background: transparent;
+    display: none; /* Standardmäßig ausblenden */
+    background: transparent; /* Hintergrund entfernt */
+    border-radius: 0;
     z-index: 1000;
+    padding: 0;
 }
 
-/* Container für Tacho (Speed-Arc + Nadel + Speed-Display) */
+/* Tacho Container */
 .speed-arc-container {
     position: absolute;
-    top: -140px; /* hoch genug, damit es über dem Kasten schwebt */
+    top: -140px;
     left: 50%;
     transform: translateX(-50%);
     width: 280px;
@@ -147,7 +146,6 @@ body {
     z-index: 15;
 }
 
-/* Moderner Tachobogen: dünner, minimalistisch, halbtransparent */
 .speed-arc-progress {
     width: 280px;
     height: 280px;
@@ -157,11 +155,11 @@ body {
     left: 0;
     background: conic-gradient(
         from 135deg,
-        rgba(0, 191, 255, 0.6) 0deg,
-        rgba(0, 255, 255, 0.6) 90deg,
-        rgba(255, 255, 0, 0.6) 180deg,
-        rgba(255, 128, 0, 0.6) 240deg,
-        rgba(255, 0, 0, 0.6) 270deg,
+        rgba(0,191,255,0.6) 0deg,
+        rgba(0,255,255,0.6) 90deg,
+        rgba(255,255,0,0.6) 180deg,
+        rgba(255,128,0,0.6) 240deg,
+        rgba(255,0,0,0.6) 270deg,
         rgba(0,0,0,0.1) 270deg,
         rgba(0,0,0,0.1) 360deg
     );
@@ -170,7 +168,6 @@ body {
     transition: background 0.3s ease;
 }
 
-/* Tachonadel: dünner, weicher Verlauf, animiert */
 .speed-needle {
     position: absolute;
     bottom: 0;
@@ -182,11 +179,10 @@ body {
     box-shadow: 0 0 15px #00bfff;
     transform-origin: bottom center;
     transform: rotate(-135deg);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.05s linear;
     z-index: 20;
 }
 
-/* Geschwindigkeitsanzeige mittig im Tacho */
 .speed-display {
     position: absolute;
     bottom: 20px;
@@ -198,47 +194,32 @@ body {
     user-select: none;
 }
 
-.speed-display #speed-value {
-    font-size: 5rem;
+.speed-display #speed-text {
+    font-size: 3rem;
     font-weight: 700;
-    text-shadow: 0 0 15px #00bfff;
-    letter-spacing: 0.05em;
+    text-shadow: 0 0 10px #00bfff;
 }
 
-.speed-display .unit {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #00bfffaa;
-    text-shadow: 0 0 8px #00bfff;
-}
-
-/* Tank- und Motoranzeige-Kasten: unten, sichtbar, nicht verdeckt */
+/* Tank- und Motoranzeige transparent */
 .vehicle-info {
     position: relative;
-    margin-top: 80px; /* Platz schaffen für das überlagernde Tacho */
+    margin-top: 80px;
     padding: 10px 25px;
-    color: #eee;
-    font-size: 1.2rem;
-    background: rgba(10, 10, 10, 0.75);
-    border-radius: 25px;
-    box-shadow: 0 0 20px #00bfffcc;
-    user-select: none;
+    background: transparent; /* Hintergrund entfernt */
+    border-radius: 0;
     display: flex;
-    gap: 25px;
+    gap: 20px;
     align-items: center;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    z-index: 10;
+    color: #fff;
+    font-size: 1.1rem;
+    box-shadow: none;
 }
 
-.vehicle-info .separator {
-    color: #666;
-}
+.vehicle-info .separator { color: #666; }
 
 .vehicle-info .fa-solid {
     margin-right: 8px;
     color: #00bfff;
     filter: drop-shadow(0 0 6px #00bfff);
 }
-
-
