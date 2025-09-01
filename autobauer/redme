@@ -1,0 +1,109 @@
+# 🚗 FiveM Fahrzeugproduktionssystem
+
+Ein umfassendes FiveM Script, das ein Produktionssystem für Fahrzeuge integriert. Firmen können Fahrzeuge herstellen, verwalten und verkaufen. Es ist kompatibel mit Datenbanken (MySQL/MariaDB) und optional mit einem Jobcreator-Script, sodass Unternehmen direkt als Jobs eingebunden werden können.
+
+---
+
+## 🌟 Features
+
+* **Fahrzeugproduktion**: Firmen können Fahrzeuge aus einer Datenbank (Tabelle `Vehicles`) auswählen und herstellen.
+* **Kategorien & Treibstoffe**: Fahrzeuge werden automatisch nach Typ (PKW, Truck, Bus, Bike) und Treibstoffart sortiert.
+* **Preisgestaltung**: Unternehmen können eigene Verkaufspreise für produzierte Fahrzeuge festlegen.
+* **Datenbankintegration**: Alle Fahrzeuge werden aus der Tabelle `Vehicles` geladen.
+* **Kompatibilität**: Optional kompatibel mit einem Jobcreator-Script (z. B. ESX Job Creator).
+* **UI**: NUI-basierte Oberfläche für einfache Bedienung (Dropdowns, Tabellen, Buttons).
+
+---
+
+## 📂 Ordnerstruktur
+
+```
+/resources/
+    ├── vehicle_factory/
+    │   ├── client/
+    │   │   ├── client.lua
+    │   │   ├── ui.js
+    │   │   ├── ui.html
+    │   │   └── style.css
+    │   ├── server/
+    │   │   └── server.lua
+    │   ├── fxmanifest.lua
+    │   └── README.md
+```
+
+---
+
+## ⚙️ Installation
+
+1. Script in den `resources`-Ordner kopieren:
+
+   ```bash
+   /resources/vehicle_factory
+   ```
+
+2. In der `server.cfg` hinzufügen:
+
+   ```cfg
+   ensure vehicle_factory
+   ```
+
+3. Datenbank vorbereiten:
+
+   * Tabelle `Vehicles` muss vorhanden sein.
+   * Beispielstruktur:
+
+     ```sql
+     CREATE TABLE IF NOT EXISTS `Vehicles` (
+         `id` INT AUTO_INCREMENT PRIMARY KEY,
+         `name` VARCHAR(50) NOT NULL,
+         `category` ENUM('pkw','truck','bus','bike') NOT NULL,
+         `fuel` ENUM('benzin','diesel','elektro','hybrid') NOT NULL,
+         `model` VARCHAR(50) NOT NULL
+     );
+     ```
+
+4. Script starten und testen.
+
+---
+
+## 🖥️ UI (NUI)
+
+Die UI wird in **HTML, CSS und JavaScript (ui.js)** umgesetzt.
+
+* Dropdowns für Fahrzeugkategorie und Treibstoff
+* Tabellenansicht für Produktionslisten
+* Eingabefeld für den Preis
+* Buttons für **Produzieren** und **Verkaufen**
+
+---
+
+## 🔗 Kompatibilität mit Jobcreator
+
+Das Script kann so erweitert werden, dass:
+
+* Nur bestimmte Jobs (z. B. `car_factory`) Zugriff auf die Produktion haben.
+* Fahrzeuge automatisch einem Firmenlager zugeordnet werden.
+* Verkaufserlöse an das Firmenkonto gebucht werden (abhängig vom Jobcreator-Script).
+
+Beispiel (ESX):
+
+```lua
+if xPlayer.job.name == "car_factory" then
+    -- Zugriff erlaubt
+end
+```
+
+---
+
+## 🚀 Geplante Erweiterungen
+
+* Firmenlager mit produzierten Fahrzeugen
+* Lieferketten-System (Rohstoffe nötig für Produktion)
+* Mitarbeiterverwaltung pro Firma
+* Komplette Integration in Jobcreator (z. B. automatische Job-Erstellung)
+
+---
+
+## 📝 Lizenz
+
+Dieses Script ist Free-to-Use, darf aber nicht ohne Erlaubnis weiterverkauft werden.

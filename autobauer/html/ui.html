@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firmen Dashboard</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+  <!-- Hauptcontainer -->
+  <div id="app" class="app-container" style="display:flex;">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2 class="logo">🚗 {{ societyInfo.label }}</h2>
+      <ul>
+        <li v-for="tab in tabs" :key="tab.screen"
+            :class="{ active: screen === tab.screen }"
+            @click="changeScreen(tab.screen)">
+          {{ tab.label }}
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Hauptinhalt -->
+    <div class="main-content">
+
+      <!-- Header -->
+      <header class="header">
+        <h1>{{ tabs.find(t => t.screen === screen).label }}</h1>
+        <div class="user-info">
+          <span>👤 Admin</span>
+          <span style="margin-left:15px;">💰 {{ societyInfo.money | currency }}</span>
+        </div>
+      </header>
+
+      <!-- Notification -->
+      <div v-if="notify.enable" class="notification">
+        {{ notify.message }}
+      </div>
+
+      <!-- Dashboard -->
+      <section class="content-section" v-show="screen==='dashboard'">
+        <div class="card-list">
+          <div class="card">
+            <h3>Fahrzeuge im Lager</h3>
+            <p>{{ vehicleStorage.reduce((acc,v)=>acc+v.amount,0) }} Stück</p>
+          </div>
+          <div class="card">
+            <h3>Bestellungen offen</h3>
+            <p>{{ orders.filter(o => o.status === 'offen').length }} Stück</p>
+          </div>
+          <div class="card">
+            <h3>Rohstoffe</h3>
+            <p>
+              <span v-for="(mat,index) in materials" :key="mat.name">
+                {{ mat.name }}: {{ mat.amount }}<span v-if="index<materials.length-1"> | </span>
+              </span>
+            </p>
+          </div>
+          <div class="card">
+            <h3>Mitarbeiter aktiv</h3>
+            <p>{{ employee.length }} Stück</p>
+          </div>
+          <div class="card">
+            <h3>Produktion aktuell</h3>
+            <p>{{ productionQueue.filter(p => p.status === 'in Produktion').length }} Fahrzeuge</p>
+          </div>
+          <div class="card">
+            <h3>Fahrzeuge fertig</h3>
+            <p>{{ productionQueue.filter(p => p.status === 'fertig').length }} Fahrzeuge</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mitarbeiter -->
+      <section class="content-section" v-show="screen==='employee'">
+        <h2>Mitarbeiterverwaltung</h2>
+        <p>💰 Aktueller Kontostand: {{ societyInfo.money | currency }}</p>
+
+        <div class="new-employee-form">
+          <input type="text" v-model="newEmployee.fullName" placeholder="Name">
+          <input type="text" v-model="newEmployee.gradeName" placeholder="Rang">
+          <button @click="hireEmployee">Einstellen</button>
+        </div>
+
+        <input type="text" v-model="employe_name" placeholder="Suche Mitarbeiter...">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rolle</th>
+              <th>Eingestellt</th>
+              <th>Note</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="emp in searchFromName()" :key="emp.identifier">
+              <td>{{ emp.fullName }}</td>
+              <td>{{ emp.gradeName }}</td>
+              <td>{{ emp.hireDate }}</td>
+              <td>{{ emp.note }}</td>
+              <td>
+                <button @click="viewEmployeeInfo(emp)">Info</button>
+                <button @click="fireEmployee(emp.identifier)">Entlassen</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Ränge -->
+      <section class="content-section" v-show="screen==='grades'">
+        <h2>Ränge & Gehälter</h2>
+        <input type="text" v-model="grade_name" placeholder="Suche Rang...">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Gehalt</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in searchFromGrade()" :key="g.number">
+              <td>{{ g.label }}</td>
+              <td>{{ g.salary }}$</td>
+              <td><button @click="viewGradeInfo(g)">Info</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Materialien -->
+      <section class="content-section" v-show="screen==='materials'">
+        <h2>Materialien</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Menge</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="mat in materials" :key="mat.name">
+              <td>{{ mat.name }}</td>
+              <td>{{ mat.amount }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Fahrzeuge -->
+      <section class="content-section" v-show="screen==='vehicles'">
+        <h2>Fahrzeuge im Lager</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Modell</th>
+              <th>Anzahl</th>
+              <th>Preis</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="v in vehicleStorage" :key="v.model">
+              <td>{{ v.model }}</td>
+              <td>{{ v.amount }}</td>
+              <td>{{ vehiclePrices.find(p=>p.model===v.model)?.price || '–' }}$</td>
+              <td>
+                <button @click="deliverVehicle(v)" :disabled="v.amount===0">Ausliefern</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Produktion -->
+      <section class="content-section" v-show="screen==='production'">
+        <h2>Produktion</h2>
+        <label>Fahrzeug auswählen:</label>
+        <select v-model="selectedProductionVehicle">
+          <option disabled value="">-- Fahrzeug wählen --</option>
+          <optgroup v-for="(vehicles, category) in vehiclesByCategory" :label="category" :key="category">
+            <option v-for="v in vehicles" :value="v.model" :key="v.model">{{ v.model }} ({{ v.fuel_type }})</option>
+          </optgroup>
+        </select>
+
+        <label>Preis anpassen:</label>
+        <input type="number" v-model="customPrice" placeholder="Standardpreis wird übernommen">
+        <button @click="startProduction">Produktion starten</button>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Fahrzeug</th>
+              <th>Status</th>
+              <th>Materialien</th>
+              <th>Preis</th>
+              <th>Treibstoff</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in productionQueue" :key="p.vehicle">
+              <td>{{ p.vehicle }}</td>
+              <td>{{ p.status }}</td>
+              <td>
+                <span v-for="(m,index) in p.materials" :key="m.name">
+                  {{ m.name }}: {{ m.amount }}<span v-if="index<p.materials.length-1"> | </span>
+                </span>
+              </td>
+              <td>{{ p.price }}$</td>
+              <td>{{ p.fuel_type }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Bestellungen -->
+      <section class="content-section" v-show="screen==='orders'">
+        <h2>Bestellungen</h2>
+        <ul class="order-list">
+          <li v-for="o in orders" :key="o.id">
+            Bestellung #{{ o.id }} - {{ o.vehicle }} - Kunde: {{ o.customer }} ({{ o.status }})
+            <button @click="viewOrderInfo(o)">Info</button>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Verkaufspreise -->
+      <section class="content-section" v-show="screen==='prices'">
+        <h2>Verkaufspreise</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Fahrzeug</th>
+              <th>Preis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="v in vehiclePrices" :key="v.model">
+              <td>{{ v.model }}</td>
+              <td>{{ v.price }}$ <button @click="viewPriceInfo(v)">Info</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
