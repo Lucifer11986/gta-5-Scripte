@@ -12,9 +12,22 @@ Citizen.CreateThread(function()
             Citizen.Wait(50)
         end
         print("^2[Autobauer]^0 Client: ESX geladen!")
+
+        -- Handle race condition where player is already loaded
+        if ESX.IsPlayerLoaded() then
+            PlayerData = ESX.GetPlayerData()
+            UpdateJobStatus()
+        end
+
     elseif Config.Framework == "QBCore" then
         QBCore = exports['qb-core']:GetCoreObject()
         print("^2[Autobauer]^0 Client: QBCore geladen!")
+
+        -- Handle race condition for QBCore
+        if QBCore.Functions.GetPlayerData() then
+            PlayerData = QBCore.Functions.GetPlayerData()
+            UpdateJobStatus()
+        end
     end
 end)
 
@@ -49,8 +62,15 @@ end
 -- Job-Check Funktion
 -- =====================
 function UpdateJobStatus()
-    local jobName = PlayerData.job and PlayerData.job.name
-    hasFactoryJob = Config.AllowedFactoryJobs[jobName] or false
+    if PlayerData and PlayerData.job then
+        local jobName = PlayerData.job.name
+        local jobLabel = PlayerData.job.label
+
+        -- Check both job name and label against the allowed list for robustness
+        hasFactoryJob = (Config.AllowedFactoryJobs[jobName] or Config.AllowedFactoryJobs[jobLabel]) or false
+    else
+        hasFactoryJob = false
+    end
 end
 
 -- =====================

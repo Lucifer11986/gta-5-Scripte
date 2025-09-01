@@ -1,6 +1,11 @@
 Config = {}
 
 -- =========================
+-- Framework Einstellung
+-- =========================
+Config.Framework = "ESX" -- Wähle zwischen "ESX" oder "QBCore"
+
+-- =========================
 -- Datenbank Einstellungen
 -- =========================
 -- Typ: "oxmysql" (empfohlen) oder "async"
@@ -16,7 +21,8 @@ Config.JobName = "autobauer"
 Config.AllowedFactoryJobs = {
     ["autobauer"] = true,
     ["car_factory"] = true,
-    ["factory_worker"] = true
+    ["factory_worker"] = true,
+    ["Autobauer GmbH"] = true
 }
 
 -- =========================
