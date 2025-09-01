@@ -18,7 +18,7 @@ function renderDispatch(calls) {
     calls.forEach(call => {
         const callDiv = document.createElement('div');
         callDiv.className = 'dispatch-call';
-
+        
         const callTime = new Date(call.time * 1000).toLocaleTimeString();
 
         callDiv.innerHTML = `
